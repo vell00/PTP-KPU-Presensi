@@ -1,0 +1,82 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class ApiException implements Exception {
+  final String message;
+  final int? status;
+  ApiException(this.message, [this.status]);
+  @override
+  String toString() => message;
+}
+
+class ApiClient {
+  final Uri base;
+  final http.Client client;
+  String? _token;
+  ApiClient(String url, {http.Client? client})
+    : base = Uri.parse(url.endsWith('/') ? url : '$url/'),
+      client = client ?? http.Client() {
+    if (!base.hasAuthority || !['https', 'http'].contains(base.scheme)) {
+      throw ArgumentError('API_BASE_URL harus berupa alamat HTTP/HTTPS.');
+    }
+    if (base.scheme != 'https' &&
+        !['localhost', '127.0.0.1', '10.0.2.2'].contains(base.host)) {
+      throw ArgumentError('Gunakan HTTPS untuk API di luar komputer lokal.');
+    }
+  }
+  Future<Map<String, dynamic>> _request(
+    String method,
+    String path, [
+    Map<String, dynamic>? data,
+  ]) async {
+    try {
+      final request = http.Request(method, base.resolve(path));
+      request.headers['Content-Type'] = 'application/json';
+      if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
+      if (data != null) request.body = jsonEncode(data);
+      final response = await (() async => http.Response.fromStream(
+        await client.send(request),
+      ))().timeout(const Duration(seconds: 20));
+      final decoded = response.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode >= 400) {
+        throw ApiException(
+          decoded['error'] as String? ?? 'Permintaan gagal.',
+          response.statusCode,
+        );
+      }
+      return decoded;
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(
+        'Tidak dapat menghubungi API. Periksa koneksi dan alamat server.',
+      );
+    }
+  }
+
+  Future<void> login(String email, String password) async {
+    final result = await _request('POST', 'api/auth/login', {
+      'email': email.trim(),
+      'password': password,
+    });
+    _token = result['token'] as String;
+  }
+
+  Future<Map<String, dynamic>> load() => _request('GET', 'api/workspace');
+  Future<Map<String, dynamic>> save(int revision, Map<String, dynamic> data) =>
+      _request('PUT', 'api/workspace', {'revision': revision, 'data': data});
+  Future<void> logout() async {
+    try {
+      await _request('POST', 'api/auth/logout');
+    } finally {
+      _token = null;
+    }
+  }
+
+  void close() {
+    _token = null;
+    client.close();
+  }
+}

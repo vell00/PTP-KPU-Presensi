@@ -1,0 +1,7 @@
+{
+  "name": "hadir-mongodb-api", "version": "0.1.0", "private": true, "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"start": "node --env-file=.env src/index.js", "test": "node --test", "seed:admin": "node --env-file=.env src/seed.js"},
+  "dependencies": {"express": "^5.1.0", "mongodb": "^6.20.0", "helmet": "^8.1.0", "cors": "^2.8.5", "express-rate-limit": "^8.1.0", "zod": "^4.1.0"},
+  "devDependencies": {"supertest": "^7.1.0", "mongodb-memory-server": "^10.2.0"}
+}

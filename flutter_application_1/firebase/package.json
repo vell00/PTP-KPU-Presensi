@@ -1,0 +1,25 @@
+{
+  "name": "hadir-firebase-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "emulators": "firebase emulators:start --config ../firebase.json --project demo-hadir-kpu --only auth,firestore,functions",
+    "seed:emulator": "node scripts/seed-emulator.mjs",
+    "admin:grant": "node scripts/grant-admin.mjs",
+    "test:rules": "firebase emulators:exec --config ../firebase.json --project demo-hadir-kpu --only auth,firestore \"node --test --test-concurrency=1 test/*.test.mjs\"",
+    "admin:bootstrap": "node scripts/bootstrap-admin.mjs",
+    "test:functions": "firebase emulators:exec --config ../firebase.json --project demo-hadir-kpu --only auth,firestore,functions \"node scripts/seed-emulator.mjs && node test/callable.smoke.mjs\""
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.0.0",
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase": "^12.0.0"
+  }
+}

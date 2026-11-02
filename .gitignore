@@ -1,0 +1,14 @@
+# Root gitignore
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+.idea/
+*.iml
+.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+.firebase/
+*.log

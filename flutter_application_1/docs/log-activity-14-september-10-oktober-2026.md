@@ -1,0 +1,43 @@
+# Draf Log Activity Pengembangan Aplikasi Presensi Hadir — KPU Sulawesi Utara
+
+Periode: 14 September–10 Oktober 2026, sesuai konfirmasi pengguna untuk penyusunan draf berdasarkan fitur yang ada. Disusun berdasarkan pemeriksaan kode dan dokumentasi pada 7 Oktober 2026.
+
+**Status: draf pembagian aktivitas, bukan riwayat harian terverifikasi.** Repository yang menaungi folder proyek belum mempunyai commit. Keberadaan fitur membuktikan implementasinya tersedia saat diperiksa, tetapi tidak membuktikan tanggal pengerjaan atau urutan pengembangannya. Pembagian tanggal di bawah perlu dicocokkan dengan catatan harian pengembang sebelum dipakai sebagai laporan aktual. Tanggal pada data contoh dan skenario tes tidak digunakan sebagai bukti tanggal pengerjaan. Akhir pekan tetap dicantumkan sebagai bagian dari rentang yang diminta; penempatan aktivitas tidak membuktikan adanya pekerjaan pada akhir pekan.
+
+Aktivitas hanya diambil dari implementasi atau dokumentasi yang tersedia. Khusus 23 September, README menyebut tanggal penelusuran rujukan tukin tersebut. Tanggal 8–10 Oktober belum diisi karena masih mendatang saat penyusunan, bukan dianggap sudah selesai atau dijadikan rencana tambahan.
+
+Kolom kendala memuat keterbatasan implementasi yang tercatat dalam proyek, bukan bukti bahwa hambatan tersebut dialami pada tanggal yang dicantumkan. “Tidak tercatat” berarti tidak ditemukan catatan kendala, bukan kepastian bahwa tidak ada kendala.
+
+| Tanggal | Aktivitas | Output | Kendala |
+|---|---|---|---|
+| 14 September 2026 | Menyiapkan kerangka aplikasi Flutter untuk aplikasi presensi. | Bootstrap dan aplikasi utama tersedia di `lib/main.dart`, `lib/app/bootstrap.dart`, dan `lib/app/presensi_app.dart`. | Tidak tercatat. |
+| 15 September 2026 | Menyusun tema, komponen antarmuka bersama, serta navigasi aplikasi. | Tema, sidebar, topbar, dan kerangka halaman tersedia di `lib/core/theme/`, `lib/core/ui/`, dan `lib/app/`. | Tidak tercatat. |
+| 16 September 2026 | Mengembangkan dashboard beserta ringkasan dan grafik kehadiran. | Halaman dashboard, ringkasan, dan grafik tersedia di `lib/features/dashboard/`. | Ringkasan dan grafik masih memakai data contoh, belum menjadi metrik kehadiran instansi. |
+| 17 September 2026 | Menyusun model presensi dan pengajuan izin serta penyimpanan data lokal. | Model `Attendance`, `LeaveRequest`, dan penyimpanan SharedPreferences melalui `AppStore` tersedia. | Penyimpanan SharedPreferences masih untuk demo lokal dan belum memenuhi persyaratan keamanan produksi. |
+| 18 September 2026 | Mengembangkan rekap kehadiran dengan pemilihan bulan dan penyaringan data. | Rekap memiliki filter nama, subdivisi, status, dan bulan di `lib/features/attendance/presentation/`. | Tidak tercatat. |
+| 19 September 2026 | Mengembangkan direktori pegawai lokal dengan tambah dan edit data. | Repository pengguna demo dan formulir pengguna menyediakan validasi NIP 18 digit serta pemeriksaan duplikasi. | Direktori pegawai lokal belum mengubah identitas pegawai demo. |
+| 20 September 2026 | Mengembangkan pengajuan izin/cuti satu hari serta persetujuan dan penolakan. | Formulir pengajuan, konfirmasi keputusan, dan penyimpanan status tersedia di `lib/features/leave/`. | Cuti beberapa hari, lampiran, dan persetujuan berjenjang belum tersedia. |
+| 21 September 2026 | Mengembangkan alur presensi masuk/keluar demo dan riwayat presensi pegawai. | Halaman presensi pegawai memiliki pencegahan duplikasi harian dan pembatasan presensi melalui web. | Tidak tercatat. |
+| 22 September 2026 | Menerapkan perhitungan waktu kerja WITA, jadwal kerja, ISHOMA, dan timer durasi efektif. | Utilitas waktu, `WorkPolicy`, dan `WorkDuration` tersedia. | Jadwal ISHOMA masih asumsi prototipe dan memerlukan persetujuan instansi. |
+| 23 September 2026 | Mencatat penelusuran acuan tunjangan kinerja KPU. | README menyebut penelusuran pada 23 September 2026 terhadap Kepsekjen 326/2022 dan perubahan 1090/2025. Ini bukti tanggal yang tertulis dalam dokumentasi, bukan verifikasi eksternal. | Tidak tercatat. |
+| 24 September 2026 | Mengembangkan pengaturan koordinat dan radius kantor serta opsi WFH Jumat. | Formulir koordinat dan radius kantor serta pengaturan WFH tersedia di `lib/features/settings/`. | Koordinat kantor belum diisi; ketentuan WFH masih contoh, belum kebijakan resmi. |
+| 25 September 2026 | Mengintegrasikan pemeriksaan lokasi WFO dan pengambilan selfie dengan kamera depan. | `DeviceAttendanceService` menyediakan pemeriksaan izin lokasi, GPS, sinyal lokasi tiruan, akurasi, usia lokasi, radius, dan pengambilan selfie kamera depan. | Selfie belum mencakup pencocokan wajah atau liveness; GPS dan kamera masih perlu diuji pada perangkat nyata. |
+| 26 September 2026 | Mengembangkan ekspor rekap presensi bulanan ke PDF. | Layanan PDF memilih catatan pada bulan terpilih, tidak menyertakan data contoh, dan memberi label laporan demo. | Tidak tercatat. |
+| 27 September 2026 | Mengembangkan simulator tunjangan kinerja dan PDF estimasi. | Simulator menyediakan input dasar, potongan kehadiran, dan capaian prestasi dengan bobot 40% dan 60%, serta ekspor PDF estimasi. | Perhitungan masih estimasi dengan input manual; aturan potongan lengkap dan payroll per pegawai belum dimodelkan. |
+| 28 September 2026 | Mengembangkan backend prototipe berbasis Node.js dan MongoDB. | Arsip `legacy/mongodb/` memuat autentikasi admin, sesi, API workspace, validasi, dan kontrol revisi; backend ini sudah tidak digunakan aplikasi aktif. | Tidak tercatat. |
+| 29 September 2026 | Memisahkan akses penyimpanan melalui kontrak repository dan menangani kegagalan sinkronisasi. | `WorkspaceRepository` dan `AppStore` menyediakan pemuatan, penyimpanan, kontrol revisi, serta pemuatan ulang setelah kegagalan tulis. | Tidak tercatat. |
+| 30 September 2026 | Mengintegrasikan Firebase Authentication dan Cloud Firestore sebagai backend aktif dalam kode. | Bootstrap Firebase dan repository Firestore tersedia; backend MongoDB diarsipkan. | Proyek Firebase asli belum dikonfigurasi; konfigurasi aplikasi masih berupa placeholder. |
+| 1 Oktober 2026 | Mengembangkan halaman login dengan NIP dan password. | Panel login, validasi NIP, penanganan kesalahan, dan controller autentikasi Firebase tersedia di `lib/features/auth/`. | Pemulihan akun melalui email belum tersedia karena alamat hasil pemetaan NIP bukan kotak surat. |
+| 2 Oktober 2026 | Mengembangkan manajemen akun dengan jabatan, bagian, dan subbagian. | Formulir pengguna dan Cloud Functions memvalidasi hierarki organisasi dan keunikan NIP. Jabatan dipisahkan dari hak administrator. | Tidak tercatat. |
+| 3 Oktober 2026 | Menerapkan kewajiban mengganti password awal sebelum mengakses aplikasi. | Panel penggantian password dan fungsi server menyediakan validasi password, pembaruan versi sesi, serta permintaan login ulang. | Tidak tercatat. |
+| 4 Oktober 2026 | Memisahkan data workspace admin dan pegawai serta membatasi akses Firestore. | Repository workspace pegawai dan Security Rules tersedia untuk pemisahan data serta pembatasan akses. | Rekap admin dan persetujuan izin belum mengagregasi workspace individual pegawai. |
+| 5 Oktober 2026 | Menyiapkan konfigurasi emulator Firebase dan skrip pengelolaan admin. | Konfigurasi emulator, seed, bootstrap admin, dan pemberian hak admin tersedia di `firebase.json` dan `firebase/scripts/`. | Tidak tercatat. |
+| 6 Oktober 2026 | Menyusun kode pengujian fitur dan integrasi. | Folder `test/` dan `firebase/test/` memuat skenario presensi, tukin, navigasi, login, pengguna, repository, autentikasi, dan Security Rules. Keberadaan tes tidak menyatakan tes sudah dijalankan atau lulus. | Tidak tercatat. |
+| 7 Oktober 2026 | Menyusun dokumentasi penggunaan, struktur aplikasi, konfigurasi Firebase, dan batas prototipe. | `README.md` dan `docs/firebase.md` tersedia, termasuk petunjuk menjalankan aplikasi dan daftar bagian yang belum siap produksi. | Tidak tercatat. |
+| 8 Oktober 2026 | Belum diisi — tanggal mendatang saat penyusunan. | Belum diisi. | Belum diisi. |
+| 9 Oktober 2026 | Belum diisi — tanggal mendatang saat penyusunan. | Belum diisi. | Belum diisi. |
+| 10 Oktober 2026 | Belum diisi — tanggal mendatang saat penyusunan. | Belum diisi. | Belum diisi. |
+
+Dasar pemeriksaan: [README proyek](../README.md), [panduan Firebase](firebase.md), [kode aplikasi](../lib/), [Cloud Functions](../functions/src/), [pengujian Flutter](../test/), [pengujian Firebase](../firebase/test/), dan [arsip backend MongoDB](../legacy/mongodb/README.md).
+
+Dokumen ini tidak menyatakan deployment produksi, pengujian perangkat nyata, verifikasi wajah, payroll resmi, atau audit aktivitas di dalam aplikasi telah selesai. Penyusunan log ini tidak mengubah kode aplikasi dan tidak menjalankan ulang pengujian.

@@ -1,0 +1,13 @@
+import {initializeApp} from 'firebase-admin/app';
+import {getAuth} from 'firebase-admin/auth';
+import {getFirestore} from 'firebase-admin/firestore';
+import {onCall} from 'firebase-functions/v2/https';
+import {defineSecret} from 'firebase-functions/params';
+import {createUserService} from './user_service.js';
+initializeApp();
+const initialPassword=defineSecret('INITIAL_USER_PASSWORD');
+const service=createUserService({auth:getAuth(),db:getFirestore(),initialPassword:()=>initialPassword.value()});
+const options={region:'asia-southeast2',secrets:[initialPassword],maxInstances:5};
+export const createManagedUser=onCall(options,request=>service.createManagedUser(request));
+export const updateManagedUser=onCall({region:'asia-southeast2',maxInstances:5},request=>service.updateManagedUser(request));
+export const completeInitialPasswordChange=onCall(options,request=>service.completeInitialPasswordChange(request));
