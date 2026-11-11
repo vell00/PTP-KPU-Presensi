@@ -1,4 +1,4 @@
-# Hadir — KPU Sulawesi Utara
+# PTP-KPU-Presensi — KPU Sulawesi Utara
 
 Implementasi MVP Flutter untuk Android, iOS dan dashboard web admin. **Prototipe, belum siap sebagai sistem presensi resmi.** Mode default menyimpan data dengan SharedPreferences. Mode Firebase menyediakan login NIP, manajemen pengguna, pergantian password awal wajib dan Cloud Firestore; lihat [panduan Firebase](docs/firebase.md). Proyek Firebase asli belum dikonfigurasi. Akun pegawai memiliki profil jabatan dan unit serta data presensi prototipe terisolasi. Peran dapat diganti melalui tombol panah pada profil sidebar.
 
