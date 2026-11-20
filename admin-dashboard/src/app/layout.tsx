@@ -15,10 +15,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className="flex min-h-screen bg-[#F8FAF9] antialiased">
         <WorkspaceProvider>
           <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
             {children}
           </div>
         </WorkspaceProvider>

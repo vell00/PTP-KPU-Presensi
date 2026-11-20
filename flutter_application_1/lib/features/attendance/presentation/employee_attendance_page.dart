@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import '../domain/attendance.dart';
 import '../domain/work_policy.dart';
 import '../services/device_attendance_service.dart';
+import '../data/presensi_sync_service.dart';
 import '../../leave/presentation/leave_request_dialog.dart';
 import 'work_duration.dart';
 
@@ -29,9 +30,9 @@ class EmployeeAttendancePage extends StatefulWidget {
 class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
   AppStore get store => widget.store;
   bool busy = false;
-  bool get fridayEligible =>
+  bool get wfhEligible =>
       store.fridayWfh &&
-      (!store.isRemote || store.currentUser?.subdepartmentId == "keuangan");
+      (!store.isRemote || store.currentUser?.subdepartmentId != null);
   DateTime get now => witaNow();
   Attendance? get today {
     final list = store.records.where((r) => dayKey(r.entered) == dayKey(now));
@@ -40,7 +41,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
 
   @override
   Widget build(BuildContext context) {
-    final wfh = WorkPolicy.isWfh(now, fridayEligible);
+    final wfh = WorkPolicy.isWfh(now, wfhEligible);
     final active = today;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +144,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                 const SizedBox(height: 22),
                 text(
                   wfh
-                      ? 'WFH Jumat aktif: verifikasi geolokasi dinonaktifkan.'
+                      ? 'WFH aktif (Selasa/Jumat): verifikasi geolokasi dinonaktifkan.'
                       : 'WFO: posisi asli, akurasi ≤ 50 m, dan radius kantor wajib terpenuhi.',
                   color: muted,
                   size: 12,
@@ -224,7 +225,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
     try {
       final captured = await DeviceAttendanceService().captureSelfie(
         store,
-        wfh: WorkPolicy.isWfh(witaNow(), fridayEligible),
+        wfh: WorkPolicy.isWfh(witaNow(), wfhEligible),
       );
       if (!captured) return;
       if (!mounted) return;
@@ -249,22 +250,29 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
       );
       if (confirmed != true || !mounted) return;
       final stamp = witaNow();
+      Attendance? newRecord;
       setState(() {
         if (today == null) {
-          store.records.insert(
-            0,
-            Attendance(
-              store.currentUser?.name ?? 'Andreas R. Sondakh',
-              store.currentUser?.unitName ?? divisions.first,
-              wfh ? 'WFH' : 'WFO',
-              stamp,
-            ),
+          newRecord = Attendance(
+            store.currentUser?.name ?? 'Andreas R. Sondakh',
+            store.currentUser?.unitName ?? divisions.first,
+            wfh ? 'WFH' : 'WFO',
+            stamp,
           );
+          store.records.insert(0, newRecord!);
         } else {
           today!.exited = stamp;
+          newRecord = today;
         }
       });
       if (!await store.save()) return;
+      if (newRecord != null) {
+        PresensiSyncService.kirimPresensi(
+          record: newRecord!,
+          nip: store.currentUser?.nip,
+          nama: store.currentUser?.name,
+        );
+      }
       if (mounted) showMessage(context, 'Presensi demo tersimpan.');
     } catch (e) {
       if (mounted) {

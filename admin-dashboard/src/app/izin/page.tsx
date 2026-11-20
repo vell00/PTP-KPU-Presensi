@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Topbar from '@/components/Topbar';
 import { useWorkspace } from '@/lib/store';
-import { Check, X, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { Check, X, Calendar } from 'lucide-react';
 
 export default function IzinPage() {
   const { data, updateRequestStatus } = useWorkspace();
@@ -26,13 +26,13 @@ export default function IzinPage() {
   return (
     <>
       <Topbar title="Persetujuan Izin & Cuti Pegawai" />
-      <main className="p-8 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-8 space-y-6 max-w-7xl">
         {/* Header summary */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-800">Daftar Permohonan Izin / Cuti</h3>
             <p className="text-xs text-slate-500">
-              Pengajuan izin atau cuti mandiri yang diajukan oleh pegawai KPU
+              Pengajuan izin atau cuti yang diajukan oleh pegawai KPU
             </p>
           </div>
 
@@ -51,83 +51,85 @@ export default function IzinPage() {
           </div>
         </div>
 
-        {/* Requests List */}
+        {/* Requests List Table */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-3.5">Nama Pegawai</th>
-                <th className="px-6 py-3.5">Jenis Permohonan</th>
-                <th className="px-6 py-3.5">Tanggal Izin</th>
-                <th className="px-6 py-3.5">Alasan / Keterangan</th>
-                <th className="px-6 py-3.5">Status</th>
-                <th className="px-6 py-3.5 text-right">Tindakan Admin</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filteredRequests.map((req) => (
-                <tr key={req.index} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-bold text-slate-900">{req.name}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
-                      {req.type}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-xs font-medium text-slate-600">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{req.date}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-xs text-slate-600 max-w-xs">
-                    {req.reason}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        req.status === 'Disetujui'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : req.status === 'Ditolak'
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                          : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}
-                    >
-                      {req.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {req.status === 'Menunggu' ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleAction(req.index, req.name, 'Disetujui')}
-                          className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Setujui</span>
-                        </button>
-                        <button
-                          onClick={() => handleAction(req.index, req.name, 'Ditolak')}
-                          className="flex items-center gap-1 px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                          <span>Tolak</span>
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">Selesai</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {filteredRequests.length === 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[600px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
-                    Tidak ada pengajuan izin yang sesuai filter.
-                  </td>
+                  <th className="px-6 py-3.5">Nama Pegawai</th>
+                  <th className="px-6 py-3.5">Jenis Permohonan</th>
+                  <th className="px-6 py-3.5">Tanggal Izin</th>
+                  <th className="px-6 py-3.5">Alasan / Keterangan</th>
+                  <th className="px-6 py-3.5">Status</th>
+                  <th className="px-6 py-3.5 text-right">Tindakan Admin</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredRequests.map((req) => (
+                  <tr key={req.index} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">{req.name}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">
+                        {req.type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-medium text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{req.date}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-600 max-w-xs">
+                      {req.reason}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          req.status === 'Disetujui'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : req.status === 'Ditolak'
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {req.status === 'Menunggu' ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleAction(req.index, req.name, 'Disetujui')}
+                            className="flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Setujui</span>
+                          </button>
+                          <button
+                            onClick={() => handleAction(req.index, req.name, 'Ditolak')}
+                            className="flex items-center gap-1 px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Tolak</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Selesai</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {filteredRequests.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      Tidak ada pengajuan izin yang ditemukan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </main>
     </>

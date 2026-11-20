@@ -2,7 +2,7 @@ import 'dart:math';
 
 class WorkPolicy {
   static bool isWfh(DateTime day, bool eligible) =>
-      day.weekday == DateTime.friday && eligible;
+      (day.weekday == DateTime.tuesday || day.weekday == DateTime.friday) && eligible;
   static DateTime end(DateTime day) => DateTime(
     day.year,
     day.month,
