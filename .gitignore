@@ -1,15 +1,39 @@
-# Root gitignore
+# Node / Next.js
+node_modules/
+*/node_modules/
+.next/
+*/.next/
+out/
+*/out/
+
+# Flutter / Dart
 .dart_tool/
+*/.dart_tool/
 .flutter-plugins-dependencies
+*/.flutter-plugins-dependencies
 .pub-cache/
+*/.pub-cache/
 .pub/
+*/.pub/
 build/
-.idea/
-*.iml
+*/build/
+
+# Android / Gradle
 .gradle/
+*/.gradle/
 android/app/debug/
 android/app/profile/
 android/app/release/
-.firebase/
-*.log
 
+# IDE & Editor
+.idea/
+*/.idea/
+*.iml
+.vscode/
+
+# Firebase & Environment
+.firebase/
+*/.firebase/
+.env
+.env*.local
+*.log

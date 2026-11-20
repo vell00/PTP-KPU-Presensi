@@ -13,7 +13,9 @@ class PresensiApp extends StatelessWidget {
   const PresensiApp({
     super.key,
     required this.store,
-    this.initialAdmin = kIsWeb,
+    // Mobile selalu membuka tampilan pegawai.
+    // Admin web dipisah ke project Next.js tersendiri.
+    this.initialAdmin = false,
     this.firebaseEnabled = false,
     this.configurationError,
   });

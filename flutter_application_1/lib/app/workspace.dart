@@ -63,7 +63,7 @@ class _WorkspaceState extends State<Workspace> {
         store: store,
         page: page,
         onNavigate: navigate,
-        onOpenAdmin: store.canAccessAdmin ? () => switchRole(true) : null,
+        onOpenAdmin: null,
       );
     }
     return switch (page) {
