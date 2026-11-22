@@ -3,9 +3,9 @@ import 'colors.dart';
 
 ThemeData buildAppTheme() => ThemeData(
   useMaterial3: true,
-  scaffoldBackgroundColor: canvas,
+  scaffoldBackgroundColor: Colors.white,
   fontFamily: 'sans-serif',
-  colorScheme: ColorScheme.fromSeed(seedColor: teal, primary: teal),
+  colorScheme: ColorScheme.fromSeed(seedColor: navy, primary: navy),
   textTheme: const TextTheme(
     bodyMedium: TextStyle(color: ink, fontSize: 13),
     bodySmall: TextStyle(color: muted, fontSize: 12),
@@ -23,21 +23,25 @@ ThemeData buildAppTheme() => ThemeData(
       borderRadius: BorderRadius.circular(9),
       borderSide: const BorderSide(color: line),
     ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(9),
+      borderSide: const BorderSide(color: kpuRed, width: 1.5),
+    ),
   ),
   filledButtonTheme: FilledButtonThemeData(
     style: FilledButton.styleFrom(
-      backgroundColor: teal,
+      backgroundColor: kpuRed,
       foregroundColor: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
   ),
   outlinedButtonTheme: OutlinedButtonThemeData(
     style: OutlinedButton.styleFrom(
-      foregroundColor: ink,
+      foregroundColor: navy,
       side: const BorderSide(color: line),
       padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 18),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
   ),
 );

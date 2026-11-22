@@ -50,47 +50,47 @@ export default function DashboardPage() {
           </div>
 
           {/* Kehadiran */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
               <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Presensi</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 flex items-center justify-center text-[#D52832]">
                 <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900">{todayRecords.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-[#07142F]">{todayRecords.length}</div>
             <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
-              <span className="text-teal-600 font-semibold">{wfoCount} WFO</span> •{' '}
-              <span className="text-blue-600 font-semibold">{wfhCount} WFH</span>
+              <span className="text-[#07142F] font-bold">{wfoCount} WFO</span> •{' '}
+              <span className="text-[#D52832] font-bold">{wfhCount} WFH</span>
             </p>
           </div>
 
           {/* Ketepatan Waktu */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
               <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Ketepatan</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#07142F]">
                 <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900">{onTimeCount}</div>
+            <div className="text-xl sm:text-2xl font-bold text-[#07142F]">{onTimeCount}</div>
             <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
-              <span className="text-teal-600 font-semibold">{onTimeCount} tepat</span> •{' '}
-              <span className="text-rose-600 font-semibold">{lateCount} terlambat</span>
+              <span className="text-[#07142F] font-bold">{onTimeCount} tepat</span> •{' '}
+              <span className="text-[#D52832] font-bold">{lateCount} terlambat</span>
             </p>
           </div>
 
           {/* Izin Menunggu */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
               <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Pengajuan</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 flex items-center justify-center text-[#D52832]">
                 <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900">{pendingRequests.length}</div>
+            <div className="text-xl sm:text-2xl font-bold text-[#07142F]">{pendingRequests.length}</div>
             <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
               {pendingRequests.length > 0 ? (
-                <span className="text-amber-600 font-semibold">Menunggu persetujuan</span>
+                <span className="text-[#D52832] font-bold">Menunggu persetujuan</span>
               ) : (
                 'Tidak ada antrean'
               )}
@@ -107,7 +107,7 @@ export default function DashboardPage() {
                 <h3 className="text-sm sm:text-base font-bold text-slate-900">Aktivitas Presensi</h3>
                 <p className="text-[10px] sm:text-xs text-slate-500">Log kehadiran dari aplikasi mobile</p>
               </div>
-              <Link href="/rekap" className="text-xs font-semibold text-teal-600 hover:text-teal-700">
+              <Link href="/rekap" className="text-xs font-bold text-[#D52832] hover:underline">
                 Lihat Semua
               </Link>
             </div>
@@ -117,7 +117,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     <th className="pb-3 px-4 sm:px-0">Nama Pegawai</th>
-                    <th className="pb-3">Subdivisi</th>
+                    <th className="pb-3">UNIT / JABATAN</th>
                     <th className="pb-3">Metode</th>
                     <th className="pb-3">Jam Masuk</th>
                     <th className="pb-3">Status</th>
@@ -135,10 +135,10 @@ export default function DashboardPage() {
                         <td className="py-3 text-slate-500 text-xs">{rec.division}</td>
                         <td className="py-3">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold ${
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-bold ${
                               rec.mode === 'WFO'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-blue-50 text-blue-700'
+                                ? 'bg-slate-100 text-[#07142F] border border-slate-200'
+                                : 'bg-rose-50 text-[#D52832] border border-rose-200'
                             }`}
                           >
                             {rec.mode === 'WFO' ? <Building2 className="w-3 h-3" /> : <Home className="w-3 h-3" />}
@@ -153,10 +153,10 @@ export default function DashboardPage() {
                         </td>
                         <td className="py-3">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
                               isLate
-                                ? 'bg-rose-50 text-rose-700'
-                                : 'bg-emerald-50 text-emerald-700'
+                                ? 'bg-rose-100 text-[#D52832]'
+                                : 'bg-slate-100 text-[#07142F]'
                             }`}
                           >
                             {isLate ? 'Terlambat' : 'Tepat Waktu'}
@@ -181,8 +181,8 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-slate-900">Izin / Cuti Menunggu</h3>
-                <span className="text-xs font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
+                <h3 className="text-sm font-bold text-[#07142F]">Izin / Cuti Menunggu</h3>
+                <span className="text-xs font-bold px-2 py-0.5 bg-rose-50 text-[#D52832] rounded-full border border-rose-200">
                   {pendingRequests.length}
                 </span>
               </div>
@@ -202,20 +202,20 @@ export default function DashboardPage() {
                 )}
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100">
-                <Link href="/izin" className="block text-center text-xs font-bold text-teal-700 hover:text-teal-800">
+                <Link href="/izin" className="block text-center text-xs font-bold text-[#D52832] hover:underline">
                   Kelola Pengajuan &rarr;
                 </Link>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-900 mb-3">Koordinat Kantor</h3>
+            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 shadow-xs">
+              <h3 className="text-sm font-bold text-[#07142F] mb-3">Koordinat Kantor</h3>
               <div className="text-xs text-slate-600 space-y-1.5">
-                <p><span className="font-semibold text-slate-700">Latitude:</span> {data.latitude ?? 'Belum diisi'}</p>
-                <p><span className="font-semibold text-slate-700">Longitude:</span> {data.longitude ?? 'Belum diisi'}</p>
-                <p><span className="font-semibold text-slate-700">Radius WFO:</span> {data.radius} meter</p>
+                <p><span className="font-semibold text-[#07142F]">Latitude:</span> {data.latitude ?? 'Belum diisi'}</p>
+                <p><span className="font-semibold text-[#07142F]">Longitude:</span> {data.longitude ?? 'Belum diisi'}</p>
+                <p><span className="font-semibold text-[#07142F]">Radius WFO:</span> {data.radius} meter</p>
               </div>
-              <Link href="/pengaturan" className="mt-4 inline-block text-xs font-bold text-teal-700 hover:text-teal-800">
+              <Link href="/pengaturan" className="mt-4 inline-block text-xs font-bold text-[#D52832] hover:underline">
                 Ubah Pengaturan &rarr;
               </Link>
             </div>

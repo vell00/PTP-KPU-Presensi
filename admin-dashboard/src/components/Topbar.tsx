@@ -39,17 +39,17 @@ export default function Topbar({ title }: { title: string }) {
             <Bell className="w-4 h-4" />
           </button>
           {pendingCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D52832] rounded-full" />
           )}
         </div>
 
         <div className="h-4 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
 
         <div className="flex items-center gap-2 pl-1 sm:pl-2">
-          <div className="w-7 h-7 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center">
+          <div className="w-7 h-7 rounded-full bg-rose-50 text-[#D52832] flex items-center justify-center">
             <User className="w-3.5 h-3.5" />
           </div>
-          <span className="text-xs font-semibold text-slate-700 hidden sm:inline">Admin</span>
+          <span className="text-xs font-semibold text-[#07142F] hidden sm:inline">Admin</span>
         </div>
       </div>
     </header>

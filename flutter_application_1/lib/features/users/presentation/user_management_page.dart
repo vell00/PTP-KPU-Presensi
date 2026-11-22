@@ -190,11 +190,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
                                 spacing: 6,
                                 runSpacing: 6,
                                 children: [
-                                  pill(u.role.label, teal),
+                                  pill(u.role.label, navy),
                                   if (u.isAdmin)
-                                    pill('Administrator', Colors.indigo),
+                                    pill('Administrator', kpuRed),
                                   if (u.mustChangePassword)
-                                    pill('Wajib ganti password', Colors.orange),
+                                    pill('Wajib ganti password', kpuRed),
                                 ],
                               ),
                             ],

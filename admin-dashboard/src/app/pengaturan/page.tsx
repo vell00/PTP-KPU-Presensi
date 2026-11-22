@@ -36,7 +36,7 @@ export default function PengaturanPage() {
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setErrorMsg('Browser Anda tidak mendukung geolokasi GPS.');
+      setErrorMsg('Perangkat Anda tidak mendukung geolokasi GPS.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -107,15 +107,15 @@ export default function PengaturanPage() {
       <Topbar title="Pengaturan Lokasi Kantor & Jadwal WFH" />
       <main className="p-4 sm:p-8 space-y-6 max-w-5xl">
         {savedSuccess && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-emerald-800">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-[#D52832]">
+            <CheckCircle2 className="w-5 h-5 text-[#D52832] shrink-0" />
             <span>Pengaturan lokasi kantor dan jadwal WFH berhasil disimpan ke database!</span>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-rose-800">
-            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-[#D52832]">
+            <AlertTriangle className="w-5 h-5 text-[#D52832] shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -125,11 +125,11 @@ export default function PengaturanPage() {
           <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 text-[#D52832] flex items-center justify-center font-bold">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Titik Geofencing Kantor KPU</h3>
+                  <h3 className="text-base font-bold text-[#07142F]">Titik Geofencing Kantor KPU</h3>
                   <p className="text-xs text-slate-500">
                     Klik pada peta atau geser pin marker untuk menentukan titik pusat radius geofencing kantor
                   </p>
@@ -139,9 +139,9 @@ export default function PengaturanPage() {
               <button
                 type="button"
                 onClick={handleGetCurrentLocation}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors border border-slate-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-[#07142F] rounded-lg text-xs font-semibold transition-colors border border-slate-200"
               >
-                <Crosshair className="w-3.5 h-3.5 text-teal-600" />
+                <Crosshair className="w-3.5 h-3.5 text-[#D52832]" />
                 <span>Gunakan Lokasi Saya Sekarang</span>
               </button>
             </div>
@@ -155,7 +155,7 @@ export default function PengaturanPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-[#07142F] mb-1">
                   Latitude *
                 </label>
                 <input
@@ -164,12 +164,12 @@ export default function PengaturanPage() {
                   placeholder="Contoh: 1.4748"
                   value={latitude}
                   onChange={(e) => setLatitude(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-[#07142F] mb-1">
                   Longitude *
                 </label>
                 <input
@@ -178,13 +178,13 @@ export default function PengaturanPage() {
                   placeholder="Contoh: 124.8421"
                   value={longitude}
                   onChange={(e) => setLongitude(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label className="block text-xs font-bold text-[#07142F] mb-1">
                 Radius Toleransi Presensi (Meter) *
               </label>
               <input
@@ -194,7 +194,7 @@ export default function PengaturanPage() {
                 required
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
-                className="w-full max-w-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full max-w-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#D52832]"
               />
               <p className="text-[11px] text-slate-400 mt-1">
                 Standar: 100 meter dari titik koordinat kantor.
@@ -206,11 +206,11 @@ export default function PengaturanPage() {
           <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 text-[#07142F] flex items-center justify-center font-bold">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Jadwal WFH per Subbagian</h3>
+                  <h3 className="text-base font-bold text-[#07142F]">Jadwal WFH per Subbagian</h3>
                   <p className="text-xs text-slate-500">
                     Tentukan hari pelaksanaan Work From Home (WFH) untuk setiap subbagian (Selasa & Jumat)
                   </p>
@@ -220,7 +220,7 @@ export default function PengaturanPage() {
               <button
                 type="button"
                 onClick={setAllDefaultSchedule}
-                className="text-xs px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-[#07142F] font-semibold hover:bg-slate-100 transition-colors"
               >
                 Set Semua: Selasa & Jumat
               </button>
@@ -237,7 +237,7 @@ export default function PengaturanPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm font-bold text-slate-800">
+                        <span className="text-sm font-bold text-[#07142F]">
                           {subdept.name}
                         </span>
                       </div>
@@ -257,8 +257,8 @@ export default function PengaturanPage() {
                             onClick={() => toggleDayForSubdept(subdept.id, day)}
                             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                               isChecked
-                                ? 'bg-teal-600 text-white shadow-xs'
-                                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
+                                ? 'bg-[#D52832] text-white shadow-xs'
+                                : 'bg-white border border-slate-200 text-[#07142F] hover:border-slate-300'
                             }`}
                           >
                             {day} {isRecommend && !isChecked ? '★' : ''}
@@ -275,7 +275,7 @@ export default function PengaturanPage() {
           <div className="flex justify-end">
             <button
               type="submit"
-              className="flex items-center gap-2 px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
+              className="flex items-center gap-2 px-6 py-2.5 bg-[#D52832] hover:bg-[#B91C1C] text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
             >
               <Save className="w-4 h-4" />
               <span>Simpan Pengaturan</span>

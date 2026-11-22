@@ -42,8 +42,14 @@ class WorkspaceTopbar extends StatelessWidget {
         Expanded(
           child: text(
             admin
-                ? adminTitles[page]
-                : ['Dashboard', 'Riwayat Kehadiran', 'WFO', 'WFH'][page],
+                ? (page >= 0 && page < adminTitles.length ? adminTitles[page] : 'Admin')
+                : (page >= 0 && page < 3
+                    ? [
+                        'Dashboard',
+                        'Riwayat Kehadiran',
+                        'Tunjangan Kinerja',
+                      ][page]
+                    : 'Aplikasi Presensi'),
             size: 12,
             weight: FontWeight.w600,
           ),

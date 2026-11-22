@@ -5,6 +5,8 @@ import '../../../../core/data/app_store.dart';
 import '../../../../core/ui/components.dart';
 import '../../../users/domain/user_profile.dart';
 
+const _red = Color(0xFFD52832);
+
 class ChangePinDialog extends StatefulWidget {
   final AppStore store;
   const ChangePinDialog({super.key, required this.store});
@@ -115,10 +117,10 @@ class _ChangePinDialogState extends State<ChangePinDialog> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDFA),
+                        color: _red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.pin_rounded, color: teal, size: 24),
+                      child: const Icon(Icons.pin_rounded, color: _red, size: 24),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -239,7 +241,7 @@ class _ChangePinDialogState extends State<ChangePinDialog> {
                       child: FilledButton(
                         onPressed: _busy ? null : _submit,
                         style: FilledButton.styleFrom(
-                          backgroundColor: teal,
+                          backgroundColor: _red,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),

@@ -108,19 +108,11 @@ class DeviceAttendanceService {
         longitude: p.longitude,
       );
     } catch (e) {
-      // Jika diuji via browser iPhone HTTP non-SSL
-      if (kIsWeb) {
-        return GeolocationVerificationResult(
-          verified: true,
-          distance: 15,
-          radius: targetRadius,
-        );
-      }
       return GeolocationVerificationResult(
         verified: false,
         distance: 0,
         radius: targetRadius,
-        errorMessage: e.toString().replaceFirst('Exception: ', ''),
+        errorMessage: 'Gagal mendeteksi koordinat GPS: ${e.toString().replaceFirst('Exception: ', '')}. Pastikan izin lokasi aplikasi telah diizinkan pada pengaturan perangkat.',
       );
     }
   }

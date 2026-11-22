@@ -10,15 +10,20 @@ export default {
     extend: {
       colors: {
         teal: {
-          50: '#F0F9F5',
-          100: '#E0F3EC',
-          500: '#2D8B6B',
-          600: '#247056',
-          700: '#1B5642',
+          50: '#FEE2E2',   // sekarang menjadi red-50
+          100: '#FECACA',
+          500: '#D52832',  // Merah KPU
+          600: '#B91C1C',
+          700: '#991B1B',
         },
         navy: {
-          800: '#1B254B',
-          900: '#111827',
+          800: '#16366C',
+          900: '#07142F',  // Navy KPU
+        },
+        kpuRed: {
+          DEFAULT: '#D52832',
+          hover: '#B91C1C',
+          light: '#FEE2E2',
         },
       },
     },

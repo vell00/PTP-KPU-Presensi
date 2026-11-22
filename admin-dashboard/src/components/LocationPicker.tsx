@@ -91,8 +91,8 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
             center={[validLat, validLng]}
             radius={radius || 100}
             pathOptions={{
-              color: '#0d9488',
-              fillColor: '#14b8a6',
+              color: '#D52832',
+              fillColor: '#D52832',
               fillOpacity: 0.2,
               weight: 2,
             }}
@@ -102,9 +102,9 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
         </MapContainer>
       </div>
       <p className="text-xs text-slate-500 flex items-center gap-1.5">
-        <span className="inline-block w-2 h-2 rounded-full bg-teal-500"></span>
+        <span className="inline-block w-2 h-2 rounded-full bg-[#D52832]"></span>
         <span>
-          <strong>Tips:</strong> Klik di mana saja pada peta atau geser pin marker biru untuk menentukan titik kantor. Lingkaran hijau menunjukkan jangkauan radius geofencing presensi.
+          <strong>Tips:</strong> Klik di mana saja pada peta atau geser pin marker untuk menentukan titik kantor. Lingkaran merah menunjukkan jangkauan radius geofencing presensi.
         </span>
       </p>
     </div>

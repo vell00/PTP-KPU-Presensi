@@ -156,6 +156,81 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> signUp({
+    required String nip,
+    required String name,
+    required String unitJabatan,
+    required String password,
+  }) async {
+    if (busy) return;
+    busy = true;
+    error = null;
+    notice = null;
+    _notify();
+    try {
+      final trimmedNip = nip.trim();
+      if (!validNip(trimmedNip)) {
+        throw const StorageException('NIP harus terdiri dari tepat 18 digit angka.');
+      }
+      if (name.trim().isEmpty) {
+        throw const StorageException('Nama lengkap tidak boleh kosong.');
+      }
+      if (unitJabatan.trim().isEmpty) {
+        throw const StorageException('Unit / Jabatan wajib dipilih.');
+      }
+      if (password.length < 6) {
+        throw const StorageException('Password minimal 6 karakter.');
+      }
+
+      final email = nipEmail(trimmedNip);
+      final credential = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      final user = credential.user;
+      if (user == null) {
+        throw const StorageException('Pendaftaran gagal. Silakan coba kembali.');
+      }
+
+      // Tentukan default role dan department
+      String defaultDeptId = 'keuangan_umum_logistik';
+      String roleStr = 'staff';
+      if (unitJabatan.startsWith('Kepala Bagian')) {
+        roleStr = 'kepala_bagian';
+      } else if (unitJabatan.startsWith('Kepala Subbagian')) {
+        roleStr = 'kepala_sub_bagian';
+      }
+
+      await firestore.collection('users').doc(user.uid).set({
+        'nip': trimmedNip,
+        'name': name.trim(),
+        'password': password,
+        'pin': null, // Pengguna baru nanti membuat PIN 6 digit saat pertama login
+        'role': roleStr,
+        'departmentId': defaultDeptId,
+        'subdepartmentId': unitJabatan,
+        'active': true,
+        'isAdmin': false,
+        'mustChangePassword': false,
+      });
+
+      notice = 'Pendaftaran berhasil! Silakan masuk dengan NIP dan password Anda.';
+    } on FirebaseAuthException catch (e) {
+      error = switch (e.code) {
+        'email-already-in-use' => 'NIP sudah terdaftar di sistem. Silakan langsung login.',
+        'weak-password' => 'Password terlalu lemah. Minimal 6 karakter.',
+        'invalid-email' => 'Format NIP tidak valid.',
+        'network-request-failed' => 'Koneksi gagal. Periksa koneksi internet Anda.',
+        _ => 'Pendaftaran gagal (${e.code}): ${e.message}',
+      };
+    } catch (e) {
+      error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      busy = false;
+      _notify();
+    }
+  }
+
   Future<void> createInitialPin(String pin) async {
     if (busy) return;
     if (profile == null) return;

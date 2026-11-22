@@ -18,6 +18,7 @@ void main() {
           onSubmit: (email, password) async {
             submitted = '$email|$password';
           },
+          onOpenSignUp: () {},
         ),
       ),
     );

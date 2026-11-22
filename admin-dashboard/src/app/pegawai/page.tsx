@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Topbar from '@/components/Topbar';
 import { useWorkspace } from '@/lib/store';
-import { DEPARTMENTS, ROLES } from '@/lib/constants';
+import { DEPARTMENTS, ROLES, ALL_UNITS_AND_POSITIONS } from '@/lib/constants';
 import { Employee } from '@/types';
 import { UserPlus, Pencil, Trash2, Search, X, Check, Key } from 'lucide-react';
 
@@ -37,7 +37,7 @@ export default function PegawaiPage() {
     setPin('');
     setRole('staff');
     setDepartmentId(DEPARTMENTS[0].id);
-    setSubdepartmentId(DEPARTMENTS[0].subdepartments[0]?.id || '');
+    setSubdepartmentId(ALL_UNITS_AND_POSITIONS[0]);
     setFormError('');
     setFormSuccess('');
     setIsModalOpen(true);
@@ -143,13 +143,13 @@ export default function PegawaiPage() {
               placeholder="Cari nama atau NIP..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D52832] shadow-sm"
             />
           </div>
 
           <button
             onClick={openAddModal}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#D52832] hover:bg-[#B91C1C] text-white rounded-lg text-sm font-semibold shadow-xs transition-colors"
           >
             <UserPlus className="w-4 h-4" />
             <span>Tambah Pegawai</span>
@@ -165,8 +165,7 @@ export default function PegawaiPage() {
                 <th className="px-6 py-3.5">Nama & NIP</th>
                 <th className="px-6 py-3.5">Password Login</th>
                 <th className="px-6 py-3.5">PIN Presensi</th>
-                <th className="px-6 py-3.5">Jabatan</th>
-                <th className="px-6 py-3.5">Subbagian</th>
+                <th className="px-6 py-3.5">UNIT / JABATAN</th>
                 <th className="px-6 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
@@ -188,23 +187,20 @@ export default function PegawaiPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-mono text-xs px-2 py-1 bg-teal-50 border border-teal-200 rounded text-teal-800 font-bold select-all">
+                      <span className="font-mono text-xs px-2 py-1 bg-rose-50 border border-rose-200 rounded text-[#D52832] font-bold select-all">
                         {emp.pin ?? 'Belum ada'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                        {roleObj?.label ?? emp.role}
+                      <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                        {emp.subdepartmentId || subdept?.name || roleObj?.label || emp.role}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-xs text-slate-600">
-                      {subdept?.name ?? '—'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEditModal(emp)}
-                          className="p-1.5 text-slate-500 hover:text-teal-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-[#D52832] hover:bg-rose-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Pencil className="w-4 h-4" />
@@ -251,30 +247,29 @@ export default function PegawaiPage() {
                     <p className="text-xs font-mono text-slate-500 mt-0.5">{emp.nip}</p>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => openEditModal(emp)} className="p-1.5 text-slate-500 hover:text-teal-600 rounded-lg">
+                    <button onClick={() => openEditModal(emp)} className="p-1.5 text-slate-500 hover:text-[#D52832] rounded-lg">
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => {
                         if (confirm(`Hapus "${emp.name}"?`)) deleteEmployee(emp.id);
                       }}
-                      className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg"
+                      className="p-1.5 text-slate-500 hover:text-[#D52832] rounded-lg"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2 items-center">
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
-                    {roleObj?.label ?? emp.role}
+                  <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200">
+                    {emp.subdepartmentId || subdept?.name || roleObj?.label || emp.role}
                   </span>
-                  <span className="text-[11px] text-slate-500">{subdept?.name ?? '—'}</span>
                   {emp.password && (
                     <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
                       PW: {emp.password}
                     </span>
                   )}
-                  <span className="text-[11px] font-mono bg-teal-50 text-teal-700 px-2 py-0.5 rounded border border-teal-200">
+                  <span className="text-[11px] font-mono bg-rose-50 text-[#D52832] px-2 py-0.5 rounded border border-rose-200">
                     PIN: {emp.pin ?? 'Belum ada'}
                   </span>
                 </div>
@@ -309,7 +304,7 @@ export default function PegawaiPage() {
                   </div>
                 )}
                 {formSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-700">
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-[#07142F]">
                     {formSuccess}
                   </div>
                 )}
@@ -325,7 +320,7 @@ export default function PegawaiPage() {
                     placeholder="198503152010011002"
                     value={nip}
                     onChange={(e) => setNip(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                   />
                   <span className="text-[10px] text-slate-400 mt-0.5 block">
                     {nip.length}/18 digit
@@ -342,7 +337,7 @@ export default function PegawaiPage() {
                     placeholder="Nama pegawai"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                   />
                 </div>
 
@@ -359,7 +354,7 @@ export default function PegawaiPage() {
                       placeholder="Minimal 6 karakter"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                     />
                     <p className="text-[10px] text-slate-400 mt-0.5">
                       Password untuk login ke aplikasi mobile
@@ -377,7 +372,7 @@ export default function PegawaiPage() {
                     placeholder={editingEmployee ? "Biarkan jika tidak ingin mengubah PIN" : "6 digit angka (opsional jika baru)"}
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                   />
                   <p className="text-[10px] text-slate-400 mt-0.5">
                     PIN untuk memproses verifikasi absensi masuk & keluar pegawai (6 digit angka)
@@ -385,27 +380,22 @@ export default function PegawaiPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Subbagian *</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    UNIT / JABATAN *
+                  </label>
                   <select
                     value={subdepartmentId}
                     onChange={(e) => {
-                      const subId = e.target.value;
-                      setSubdepartmentId(subId);
-                      // Auto-set parent department
-                      const parentDept = DEPARTMENTS.find((d) =>
-                        d.subdepartments.some((s) => s.id === subId)
-                      );
-                      if (parentDept) setDepartmentId(parentDept.id);
+                      const selectedVal = e.target.value;
+                      setSubdepartmentId(selectedVal);
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#D52832]"
                   >
-                    {DEPARTMENTS.flatMap((d) =>
-                      d.subdepartments.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))
-                    )}
+                    {ALL_UNITS_AND_POSITIONS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -420,7 +410,7 @@ export default function PegawaiPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-5 py-2 bg-[#D52832] hover:bg-[#B91C1C] text-white rounded-lg text-sm font-semibold transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-4 h-4" />
                     <span>{isSubmitting ? 'Menyimpan...' : editingEmployee ? 'Simpan' : 'Tambah Pegawai'}</span>

@@ -7,6 +7,8 @@ class WorkspaceSidebar extends StatelessWidget {
   final bool admin, isRemote;
   final int page, pending;
   final ValueChanged<int> onNavigate;
+  final VoidCallback? onLeaveRequest;
+  final VoidCallback? onChangePin;
   final VoidCallback? onToggle;
   final UserProfile? profile;
   const WorkspaceSidebar({
@@ -16,6 +18,8 @@ class WorkspaceSidebar extends StatelessWidget {
     required this.page,
     required this.pending,
     required this.onNavigate,
+    this.onLeaveRequest,
+    this.onChangePin,
     required this.onToggle,
     this.profile,
   });
@@ -27,36 +31,22 @@ class WorkspaceSidebar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(26, 30, 22, 30),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(26, 30, 22, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 40,
-                  height: 43,
-                  decoration: BoxDecoration(
-                    color: teal,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.fingerprint_rounded,
-                    color: Colors.white,
-                    size: 29,
-                  ),
+                text(
+                  'PTP-KPU-Presensi',
+                  size: 18,
+                  weight: FontWeight.w800,
+                  color: navy,
                 ),
-                const SizedBox(width: 11),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      text('hadir', size: 29, weight: FontWeight.w800),
-                      text(
-                        'KPU SULAWESI UTARA',
-                        size: 7,
-                        color: muted,
-                        weight: FontWeight.w700,
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 3),
+                text(
+                  'Sulawesi Utara',
+                  size: 11,
+                  color: muted,
+                  weight: FontWeight.w700,
                 ),
               ],
             ),
@@ -64,39 +54,130 @@ class WorkspaceSidebar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 26),
             child: text(
-              'WORKSPACE',
+              admin ? 'PORTAL ADMINISTRATOR' : 'WORKSPACE',
               size: 10,
               color: muted,
               weight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 15),
-          ...List.generate(admin ? 6 : 4, (i) {
-            final labels = admin
-                ? adminTitles
-                : ['Dashboard', 'Riwayat Kehadiran', 'WFO', 'WFH'];
-            final icons = admin
-                ? [
-                    Icons.grid_view_rounded,
-                    Icons.fact_check_outlined,
-                    Icons.people_outline_rounded,
-                    Icons.event_note_outlined,
-                    Icons.account_balance_wallet_outlined,
-                    Icons.tune_rounded,
-                  ]
-                : [
-                    Icons.grid_view_rounded,
-                    Icons.history_rounded,
-                    Icons.apartment_rounded,
-                    Icons.home_work_outlined,
-                  ];
-            return Padding(
+          if (admin)
+            ...List.generate(adminTitles.length, (i) {
+              final labels = adminTitles;
+              final icons = [
+                Icons.grid_view_rounded,
+                Icons.fact_check_outlined,
+                Icons.people_outline_rounded,
+                Icons.event_note_outlined,
+                Icons.account_balance_wallet_outlined,
+                Icons.tune_rounded,
+              ];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                child: Material(
+                  color: page == i ? const Color(0xFFF1F5F9) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () => onNavigate(i),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            icons[i],
+                            size: 20,
+                            color: page == i ? kpuRed : muted,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: text(
+                              labels[i],
+                              color: page == i ? navy : const Color(0xFF626F6B),
+                              weight: page == i
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                          if (i == 3 && pending > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFEFE0),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: text(
+                                '$pending',
+                                color: const Color(0xFFB57A32),
+                                size: 10,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            })
+          else ...[
+            // Menu User: Dashboard (0), Riwayat Kehadiran (1), Tunjangan Kinerja (2)
+            ...[
+              {'label': 'Dashboard', 'icon': Icons.grid_view_rounded, 'idx': 0},
+              {'label': 'Riwayat Kehadiran', 'icon': Icons.history_rounded, 'idx': 1},
+              {'label': 'Tunjangan Kinerja', 'icon': Icons.account_balance_wallet_outlined, 'idx': 2},
+            ].map((item) {
+              final i = item['idx'] as int;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+                child: Material(
+                  color: page == i ? const Color(0xFFF1F5F9) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () => onNavigate(i),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            item['icon'] as IconData,
+                            size: 20,
+                            color: page == i ? kpuRed : muted,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: text(
+                              item['label'] as String,
+                              color: page == i ? navy : const Color(0xFF626F6B),
+                              weight: page == i
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+            // Menu Aksi User: Ajukan izin/cuti & Ganti PIN Presensi
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
               child: Material(
-                color: page == i ? const Color(0xFFE9F4F0) : Colors.transparent,
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 child: InkWell(
-                  onTap: () => onNavigate(i),
+                  onTap: onLeaveRequest,
                   borderRadius: BorderRadius.circular(8),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -105,44 +186,60 @@ class WorkspaceSidebar extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          icons[i],
+                        const Icon(
+                          Icons.edit_calendar_outlined,
                           size: 20,
-                          color: page == i ? teal : muted,
+                          color: muted,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: text(
-                            labels[i],
-                            color: page == i ? teal : const Color(0xFF626F6B),
-                            weight: page == i
-                                ? FontWeight.w700
-                                : FontWeight.w500,
+                            'Ajukan izin / cuti',
+                            color: const Color(0xFF626F6B),
+                            weight: FontWeight.w500,
                           ),
                         ),
-                        if (admin && i == 3 && pending > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFEFE0),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: text(
-                              '$pending',
-                              color: const Color(0xFFB57A32),
-                              size: 10,
-                            ),
-                          ),
                       ],
                     ),
                   ),
                 ),
               ),
-            );
-          }),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: onChangePin,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.lock_reset_rounded,
+                          size: 20,
+                          color: muted,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: text(
+                            'Ganti PIN Presensi',
+                            color: const Color(0xFF626F6B),
+                            weight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
           const Spacer(),
           Padding(
             padding: const EdgeInsets.all(20),

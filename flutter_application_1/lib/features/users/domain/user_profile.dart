@@ -49,21 +49,17 @@ class UserProfile {
     }
   }
   String get unitName {
-    if (subdepartmentId == null || subdepartmentId!.isEmpty) {
-      return department.name;
-    }
-    try {
-      return department.subdepartments
-          .firstWhere((s) => s.id == subdepartmentId)
-          .name;
-    } catch (_) {
+    if (subdepartmentId != null && subdepartmentId!.isNotEmpty) {
+      // Jika subdepartmentId cocok dengan salah satu id lama di departments, ambil nama subdepartment
       for (final d in departments) {
         for (final s in d.subdepartments) {
           if (s.id == subdepartmentId) return s.name;
         }
       }
+      // Jika berisi nama jabatan / unit langsung
       return subdepartmentId!;
     }
+    return department.name;
   }
   Map<String, dynamic> assignment() => {
     'uid': uid,

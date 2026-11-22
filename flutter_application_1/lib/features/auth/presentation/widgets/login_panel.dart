@@ -10,12 +10,14 @@ class LoginPanel extends StatefulWidget {
   final String? error;
   final String? notice;
   final Future<void> Function(String nip, String password) onSubmit;
+  final VoidCallback onOpenSignUp;
   const LoginPanel({
     super.key,
     required this.busy,
     this.error,
     this.notice,
     required this.onSubmit,
+    required this.onOpenSignUp,
   });
   @override
   State<LoginPanel> createState() => _LoginPanelState();
@@ -170,8 +172,9 @@ class _LoginPanelState extends State<LoginPanel> {
                                 padding: const EdgeInsets.only(top: 12),
                                 child: Text(
                                   widget.notice!,
-                                  style: const TextStyle(
-                                    color: Colors.green,
+                                  style: TextStyle(
+                                    color: _navy,
+                                    fontWeight: FontWeight.w600,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -222,7 +225,31 @@ class _LoginPanelState extends State<LoginPanel> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Belum punya akun? ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF7A8393),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: widget.busy ? null : widget.onOpenSignUp,
+                                  child: const Text(
+                                    'Daftar (Sign Up)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _red,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
                             const Text(
                               'Masuk menggunakan NIP Anda',
                               style: TextStyle(

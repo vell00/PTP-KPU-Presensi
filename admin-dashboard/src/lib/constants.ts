@@ -27,14 +27,37 @@ export const DEPARTMENTS = [
   },
 ];
 
-export const DIVISIONS = [
+export const ALL_UNITS_AND_POSITIONS = [
+  // 1. Jabatan Fungsional, Struktural & Pimpinan
+  'Ketua KPU Provinsi Sulut',
+  'Sekretaris KPU Provinsi Sulut',
+  'Ketua Divisi Teknis Penyelenggaraan Pemilu',
+  'Ketua Divisi Perencanaan Data & Informasi',
+  'Ketua Divisi Keuangan, Umum, Rumah Tangga & Logistik',
+  'Ketua Divisi Hukum & Pengawasan',
+  'Ketua Divisi Sosialisasi Pendidikan Pemilih, Partisipasi Masyarakat & Sumber Daya Manusia',
+  'Kepala Bagian Keuangan, Umum dan Logistik',
+  'Kepala Bagian Teknis Penyelenggaraan Pemilu dan Hukum',
+  'Kepala Bagian Perencanaan, Data dan Informasi, Partisipasi, Hubungan Masyarakat, dan Sumber Daya Manusia',
+  'Kepala Subbagian Keuangan',
+  'Kepala Subbagian Umum dan Logistik',
+  'Kepala Subbagian Teknis Penyelenggaraan Pemilu',
+  'Kepala Subbagian Hukum',
+  'Kepala Subbagian Perencanaan Data dan Informasi',
+  'Kepala Subbagian Partisipasi, Hubungan Masyarakat dan Sumber Daya Manusia',
+  'Jabatan Fungsional',
+  'Jagat Saksana',
+  'Pramubakti',
+  // 2. Unit Subbagian
   'Keuangan',
   'Umum dan Logistik',
   'Teknis Penyelenggaraan Pemilu',
   'Hukum',
   'Perencanaan Data dan Informasi',
-  'Partisipasi, Hubungan Masyarakat dan Sumber Daya Manusia',
+  'Partisipasi, Humas & SDM',
 ];
+
+export const DIVISIONS = ALL_UNITS_AND_POSITIONS;
 
 export const ALL_SUBDEPARTMENTS = DEPARTMENTS.flatMap((d) =>
   d.subdepartments.map((s) => ({ ...s, departmentName: d.name }))

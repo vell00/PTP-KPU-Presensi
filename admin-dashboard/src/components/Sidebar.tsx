@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Menu,
   X,
+  Coins,
 } from 'lucide-react';
 import { useWorkspace } from '@/lib/store';
 
@@ -28,28 +29,26 @@ export default function Sidebar() {
     { label: 'Rekap Kehadiran', href: '/rekap', icon: ClipboardCheck },
     { label: 'Manajemen Pegawai', href: '/pegawai', icon: Users },
     { label: 'Izin & Cuti', href: '/izin', icon: CalendarDays, badge: pendingRequestsCount },
+    { label: 'Tunjangan Kinerja', href: '/tukin', icon: Coins },
     { label: 'Pengaturan', href: '/pengaturan', icon: Settings },
   ];
 
   const sidebarContent = (
     <>
       {/* Brand Header */}
-      <div className="p-5 lg:p-6 flex items-center gap-3 border-b border-slate-100">
-        <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center text-white shadow-sm shadow-teal-500/20">
-          <Fingerprint className="w-6 h-6" />
-        </div>
+      <div className="p-5 lg:p-6 flex items-center justify-between border-b border-slate-100">
         <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-800 leading-none">
-            hadir
+          <h1 className="text-lg font-black tracking-tight text-[#07142F] leading-snug">
+            PTP-KPU-Presensi
           </h1>
-          <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-            KPU SULAWESI UTARA
+          <span className="text-[11px] font-bold text-slate-400 tracking-wider">
+            Sulawesi Utara
           </span>
         </div>
         {/* Close button on mobile */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="lg:hidden ml-auto p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
         >
           <X className="w-5 h-5" />
         </button>
@@ -70,18 +69,18 @@ export default function Sidebar() {
               onClick={() => setMobileOpen(false)}
               className={`flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 isActive
-                  ? 'bg-teal-50 text-teal-700 shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-rose-50 text-[#D52832] shadow-xs'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-[#07142F]'
               }`}
             >
               <div className="flex items-center gap-3">
                 <Icon
-                  className={`w-4 h-4 ${isActive ? 'text-teal-600' : 'text-slate-400'}`}
+                  className={`w-4 h-4 ${isActive ? 'text-[#D52832]' : 'text-slate-400'}`}
                 />
                 <span>{item.label}</span>
               </div>
               {item.badge !== undefined && item.badge > 0 && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-[#D52832] text-white">
                   {item.badge}
                 </span>
               )}
@@ -92,8 +91,8 @@ export default function Sidebar() {
 
       {/* Info Card */}
       <div className="p-4 mx-4 mb-4 rounded-xl bg-slate-50 border border-slate-100">
-        <div className="flex items-center gap-2 text-teal-700 font-semibold text-xs mb-1">
-          <ShieldCheck className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-[#07142F] font-semibold text-xs mb-1">
+          <ShieldCheck className="w-4 h-4 text-[#D52832]" />
           <span>Web Admin Portal</span>
         </div>
         <p className="text-[11px] text-slate-500 leading-relaxed">
@@ -108,7 +107,7 @@ export default function Sidebar() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-slate-800 truncate">Admin KPU Sulut</p>
-          <p className="text-[10px] text-teal-600 font-medium">Administrator</p>
+          <p className="text-[10px] text-[#D52832] font-semibold">Administrator</p>
         </div>
       </div>
     </>

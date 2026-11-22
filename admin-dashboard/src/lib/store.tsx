@@ -12,7 +12,7 @@ interface WorkspaceContextType {
   isLoaded: boolean;
   saveData: (updater: (prev: WorkspaceData) => WorkspaceData) => void;
   addEmployee: (emp: Omit<Employee, 'id'>) => Promise<{ success: boolean; message?: string }>;
-  updateEmployee: (emp: Employee) => { success: boolean; message?: string };
+  updateEmployee: (emp: Employee) => Promise<{ success: boolean; message?: string }>;
   deleteEmployee: (id: string) => void;
   updateRequestStatus: (index: number, status: 'Disetujui' | 'Ditolak') => void;
   updateSettings: (settings: { latitude: number | null; longitude: number | null; radius: number; wfhSchedule: WfhSchedule }) => void;

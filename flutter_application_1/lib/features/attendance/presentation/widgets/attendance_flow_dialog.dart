@@ -179,7 +179,9 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
 
   @override
   Widget build(BuildContext context) {
-    const teal = Color(0xFF0D9488);
+    const teal = Color(0xFF07142F); // Navy KPU
+    const primaryNavy = Color(0xFF07142F);
+    const accentRed = Color(0xFFD52832);
     final isAndroidDevice = defaultTargetPlatform == TargetPlatform.android;
     final showFingerprintOption = isAndroidDevice || _forceShowFingerprint;
 
@@ -248,19 +250,19 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                     width: 76,
                     height: 76,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE6FFFA),
+                      color: const Color(0xFFF1F5F9),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF99F6E4), width: 3),
+                      border: Border.all(color: primaryNavy.withValues(alpha: 0.2), width: 3),
                       boxShadow: [
                         BoxShadow(
-                          color: teal.withValues(alpha: 0.2),
+                          color: primaryNavy.withValues(alpha: 0.15),
                           blurRadius: 18,
                           spreadRadius: 4,
                         ),
                       ],
                     ),
                     child: const Center(
-                      child: Icon(Icons.share_location_rounded, color: teal, size: 38),
+                      child: Icon(Icons.share_location_rounded, color: primaryNavy, size: 38),
                     ),
                   ),
                 ),
@@ -279,7 +281,7 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                 const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: teal),
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: primaryNavy),
                 ),
               ] else if (_stage == _FlowStage.locationFailed) ...[
                 // Feedback Gagal Geofencing
@@ -335,6 +337,7 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: _startLocationDetection,
+                        style: FilledButton.styleFrom(backgroundColor: accentRed),
                         icon: const Icon(Icons.refresh, size: 18),
                         label: const Text('Coba Lagi'),
                       ),
@@ -548,7 +551,7 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                       child: FilledButton(
                         onPressed: _verifyPin,
                         style: FilledButton.styleFrom(
-                          backgroundColor: teal,
+                          backgroundColor: accentRed,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),

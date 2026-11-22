@@ -11,6 +11,9 @@ import '../features/settings/presentation/settings_page.dart';
 import 'widgets/workspace_sidebar.dart';
 import 'widgets/workspace_topbar.dart';
 
+import '../features/leave/presentation/leave_request_dialog.dart';
+import '../features/attendance/presentation/widgets/change_pin_dialog.dart';
+
 /// Owns navigation only. Each feature owns its own form/filter/timer state.
 class Workspace extends StatefulWidget {
   final AppStore store;
@@ -59,6 +62,9 @@ class _WorkspaceState extends State<Workspace> {
 
   Widget currentPage() {
     if (!admin) {
+      if (page == 2) {
+        return AllowancePage(store: store);
+      }
       return EmployeeAttendancePage(
         store: store,
         page: page,
@@ -98,6 +104,11 @@ class _WorkspaceState extends State<Workspace> {
         page: page,
         pending: pending,
         onNavigate: navigate,
+        onLeaveRequest: () => showLeaveRequestDialog(context, store),
+        onChangePin: () => showDialog(
+          context: context,
+          builder: (ctx) => ChangePinDialog(store: store),
+        ),
         onToggle: store.canAccessAdmin ? () => switchRole(!admin) : null,
         profile: store.currentUser,
       );

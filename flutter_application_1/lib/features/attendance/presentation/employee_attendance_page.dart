@@ -100,16 +100,8 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
         heading(
           widget.page == 1
               ? 'Riwayat Kehadiran'
-              : widget.page == 2
-              ? 'Work from office'
-              : widget.page == 3
-              ? 'Work from home'
               : 'Halo, ${store.currentUser?.name ?? 'Pegawai'} 👋',
           '${store.currentUser?.unitName ?? 'KPU'} • KPU Sulawesi Utara',
-          action: pill(
-            store.isRemote ? 'Firebase Online' : 'Mode Offline',
-            teal,
-          ),
         ),
         if (widget.page == 1) ...[
           ...store.records.map(
@@ -118,7 +110,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
               child: card(
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.event_available, color: teal),
+                  leading: const Icon(Icons.event_available, color: kpuRed),
                   title: text(
                     '${dayKey(r.entered)} • ${r.mode}',
                     weight: FontWeight.w600,
@@ -126,7 +118,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                   subtitle: text(
                     '${clockText(r.entered)} — ${clockText(r.exited)} WITA',
                   ),
-                  trailing: pill(r.status, teal),
+                  trailing: pill(r.status, navy),
                 ),
               ),
             ),
@@ -148,7 +140,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                         color: muted,
                       ),
                     ),
-                    pill(wfh ? 'WFH' : 'WFO', teal),
+                    pill(wfh ? 'WFH' : 'WFO', navy),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -204,6 +196,12 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: kpuRed,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                     onPressed: busy || active?.exited != null
                         ? null
                         : () => checkIn(wfh),
@@ -220,6 +218,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                           : active == null
                           ? 'Presensi Masuk Sekarang'
                           : 'Presensi Keluar Sekarang',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -248,6 +247,11 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                 onPressed: () => showLeaveRequestDialog(context, store),
                 icon: const Icon(Icons.edit_calendar_outlined, size: 18),
                 label: const Text('Ajukan izin / cuti'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => widget.onNavigate(2),
+                icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+                label: const Text('Tunjangan Kinerja (Tukin)'),
               ),
               OutlinedButton.icon(
                 onPressed: () => showDialog(

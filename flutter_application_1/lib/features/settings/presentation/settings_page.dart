@@ -64,7 +64,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 weight: FontWeight.w600,
               ),
               subtitle: text(
-                'Subdivisi lain tetap WFO. Geolokasi tidak diminta saat WFH.',
+                'Unit/Jabatan lain tetap WFO. Geofencing tidak diminta saat WFH.',
                 color: muted,
                 size: 11,
               ),
