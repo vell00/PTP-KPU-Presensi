@@ -50,6 +50,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           departmentId: d.departmentId || '',
           subdepartmentId: d.subdepartmentId || '',
           password: d.password,
+          pin: d.pin,
         });
       });
 
@@ -129,6 +130,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       await setDoc(doc(db, 'users', uid), {
         nip: emp.nip,
         name: emp.name || emp.nip,
+        password: password,
+        pin: emp.pin || null,
         role: emp.role || 'staff',
         departmentId: emp.departmentId || '',
         subdepartmentId: emp.subdepartmentId || '',
@@ -157,16 +160,33 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }
   }, [data.employees]);
 
-  const updateEmployee = useCallback((emp: Employee) => {
-    let result: { success: boolean; message?: string } = { success: true };
+  const updateEmployee = useCallback(async (emp: Employee) => {
     if (!/^\d{18}$/.test(emp.nip)) {
       return { success: false, message: 'NIP harus terdiri dari tepat 18 digit angka.' };
     }
-    setData((prev) => ({
-      ...prev,
-      employees: prev.employees.map((e) => (e.id === emp.id ? emp : e)),
-    }));
-    return result;
+    if (emp.pin && (!/^\d{6}$/.test(emp.pin))) {
+      return { success: false, message: 'PIN presensi harus berupa 6 digit angka.' };
+    }
+
+    try {
+      // Perbarui di Firestore
+      await setDoc(doc(db, 'users', emp.id), {
+        name: emp.name,
+        role: emp.role,
+        departmentId: emp.departmentId,
+        subdepartmentId: emp.subdepartmentId || '',
+        pin: emp.pin || null,
+      }, { merge: true });
+
+      setData((prev) => ({
+        ...prev,
+        employees: prev.employees.map((e) => (e.id === emp.id ? emp : e)),
+      }));
+      return { success: true };
+    } catch (e: any) {
+      console.error('Gagal memperbarui pegawai:', e);
+      return { success: false, message: e?.message || 'Gagal menyimpan perubahan ke Firestore.' };
+    }
   }, []);
 
   const deleteEmployee = useCallback((id: string) => {

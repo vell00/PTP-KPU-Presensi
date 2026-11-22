@@ -174,9 +174,7 @@ class WorkspaceSidebar extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   text(
-                    isRemote
-                        ? 'Firebase • Data prototipe'
-                        : 'Mode demo • Data lokal',
+                    'Sistem Presensi KPU Sulawesi Utara',
                     size: 10,
                     color: teal,
                   ),
@@ -190,7 +188,7 @@ class WorkspaceSidebar extends StatelessWidget {
             child: Row(
               children: [
                 avatar(
-                  profile?.name ?? (admin ? 'Admin KPU' : 'Andreas Sondakh'),
+                  profile?.name ?? (admin ? 'Admin KPU' : 'Pegawai'),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -199,7 +197,7 @@ class WorkspaceSidebar extends StatelessWidget {
                     children: [
                       text(
                         profile?.name ??
-                            (admin ? 'Admin KPU Sulut' : 'Andreas Sondakh'),
+                            (admin ? 'Admin KPU Sulut' : 'Pegawai'),
                         size: 12,
                         weight: FontWeight.w700,
                       ),
@@ -214,7 +212,7 @@ class WorkspaceSidebar extends StatelessWidget {
                 ),
                 if (onToggle != null)
                   IconButton(
-                    tooltip: 'Ganti tampilan demo',
+                    tooltip: 'Ganti tampilan',
                     onPressed: onToggle,
                     icon: const Icon(Icons.swap_horiz, size: 18),
                   ),

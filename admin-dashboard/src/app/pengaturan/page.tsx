@@ -129,9 +129,9 @@ export default function PengaturanPage() {
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Titik Geolocation Kantor KPU</h3>
+                  <h3 className="text-base font-bold text-slate-900">Titik Geofencing Kantor KPU</h3>
                   <p className="text-xs text-slate-500">
-                    Klik pada peta atau geser pin marker untuk menentukan titik pusat kantor
+                    Klik pada peta atau geser pin marker untuk menentukan titik pusat radius geofencing kantor
                   </p>
                 </div>
               </div>

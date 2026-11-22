@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/ui/components.dart';
 import 'package:flutter_application_1/core/data/app_store.dart';
+import '../../attendance/presentation/widgets/change_pin_dialog.dart';
 import 'location_form.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -72,6 +73,22 @@ class _SettingsPageState extends State<SettingsPage> {
                 setState(() => store.fridayWfh = v);
                 if (!await store.save()) return;
               },
+            ),
+            const Divider(height: 30),
+            text('Keamanan Akun', size: 17, weight: FontWeight.w700),
+            const SizedBox(height: 8),
+            text(
+              'PIN 6-digit digunakan untuk memproses presensi masuk dan keluar.',
+              color: muted,
+            ),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () => showDialog(
+                context: context,
+                builder: (ctx) => ChangePinDialog(store: store),
+              ),
+              icon: const Icon(Icons.pin_rounded, size: 18),
+              label: const Text('Ganti PIN Presensi'),
             ),
             const Divider(height: 30),
             text('Lingkungan pengembangan', weight: FontWeight.w700),

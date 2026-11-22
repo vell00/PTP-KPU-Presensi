@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../../firebase_options.dart';
 
-const useFirebase = bool.fromEnvironment('USE_FIREBASE');
+const useFirebase = true;
 const useFirebaseEmulators = bool.fromEnvironment('FIREBASE_EMULATORS');
 
 Future<void> initializeFirebase() async {

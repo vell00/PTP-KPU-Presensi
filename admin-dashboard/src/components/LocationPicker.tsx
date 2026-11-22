@@ -72,8 +72,8 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; Google Maps'
+            url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
           />
           <Marker
             position={[validLat, validLng]}
@@ -104,7 +104,7 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
       <p className="text-xs text-slate-500 flex items-center gap-1.5">
         <span className="inline-block w-2 h-2 rounded-full bg-teal-500"></span>
         <span>
-          <strong>Tips:</strong> Klik di mana saja pada peta atau geser pin marker biru untuk menentukan titik kantor. Lingkaran hijau menunjukkan jangkauan radius presensi.
+          <strong>Tips:</strong> Klik di mana saja pada peta atau geser pin marker biru untuk menentukan titik kantor. Lingkaran hijau menunjukkan jangkauan radius geofencing presensi.
         </span>
       </p>
     </div>

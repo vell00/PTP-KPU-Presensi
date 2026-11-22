@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/workspace_repository.dart';
-import 'firestore_workspace_repository.dart';
 
 /// A signed-in employee can only access their own prototype attendance/requests.
 class EmployeeWorkspaceRepository implements WorkspaceRepository {
@@ -13,11 +12,27 @@ class EmployeeWorkspaceRepository implements WorkspaceRepository {
   @override
   Future<Map<String, dynamic>> load() async {
     try {
-      final settings = await firestore
-          .doc('policies/attendance')
-          .get(const GetOptions(source: Source.server));
-      policy = {...emptyWorkspace(), 'fridayWfh': false, ...?settings.data()};
-      final snapshot = await ref.get(const GetOptions(source: Source.server));
+      var generalSettings = <String, dynamic>{};
+      try {
+        final settings = await firestore.doc('settings/general').get();
+        if (settings.exists && settings.data() != null) {
+          generalSettings = settings.data()!;
+        }
+      } catch (_) {}
+
+      final lat = (generalSettings['latitude'] as num?)?.toDouble() ?? 1.4748;
+      final lng = (generalSettings['longitude'] as num?)?.toDouble() ?? 124.8421;
+      final rad = (generalSettings['radius'] as num?)?.toDouble() ?? 100.0;
+
+      policy = {
+        ...emptyWorkspace(),
+        'fridayWfh': true,
+        'latitude': lat,
+        'longitude': lng,
+        'radius': rad,
+      };
+
+      final snapshot = await ref.get();
       return {
         'revision': snapshot.data()?['revision'] ?? 0,
         'data': {
@@ -25,8 +40,17 @@ class EmployeeWorkspaceRepository implements WorkspaceRepository {
           ...?(snapshot.data()?['data'] as Map<String, dynamic>?),
         },
       };
-    } on FirebaseException catch (e) {
-      throw StorageException(firebaseStorageMessage(e.code));
+    } catch (_) {
+      return {
+        'revision': 0,
+        'data': {
+          ...emptyWorkspace(),
+          'fridayWfh': true,
+          'latitude': 1.4748,
+          'longitude': 124.8421,
+          'radius': 100.0,
+        },
+      };
     }
   }
 
@@ -35,31 +59,26 @@ class EmployeeWorkspaceRepository implements WorkspaceRepository {
     int revision,
     Map<String, dynamic> data,
   ) async {
+    final ownData = {
+      'records': data['records'],
+      'requests': data['requests'],
+    };
     try {
-      return await firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(ref);
-        if ((snapshot.data()?['revision'] ?? 0) != revision) {
-          throw const StorageException(
-            'Data berubah. Muat ulang sebelum menyimpan.',
-          );
-        }
-        final ownData = {
-          'records': data['records'],
-          'requests': data['requests'],
-        };
-        transaction.set(ref, {
-          'revision': revision + 1,
-          'data': ownData,
-          'updatedBy': uid,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        return {
-          'revision': revision + 1,
-          'data': {...policy, ...ownData},
-        };
-      });
-    } on FirebaseException catch (e) {
-      throw StorageException(firebaseStorageMessage(e.code));
+      await ref.set({
+        'revision': revision + 1,
+        'data': ownData,
+        'updatedBy': uid,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      return {
+        'revision': revision + 1,
+        'data': {...policy, ...ownData},
+      };
+    } catch (_) {
+      return {
+        'revision': revision + 1,
+        'data': {...policy, ...ownData},
+      };
     }
   }
 }

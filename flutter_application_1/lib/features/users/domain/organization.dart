@@ -5,7 +5,8 @@ enum JobRole {
 
   final String id, label;
   const JobRole(this.id, this.label);
-  static JobRole parse(String id) => values.firstWhere((role) => role.id == id);
+  static JobRole parse(String id) =>
+      values.firstWhere((role) => role.id == id, orElse: () => JobRole.staff);
 }
 
 class Subdepartment {

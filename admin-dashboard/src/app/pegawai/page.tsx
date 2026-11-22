@@ -18,6 +18,7 @@ export default function PegawaiPage() {
   const [nip, setNip] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
   const [role, setRole] = useState<'kepala_bagian' | 'kepala_sub_bagian' | 'staff'>('staff');
   const [departmentId, setDepartmentId] = useState(DEPARTMENTS[0].id);
   const [subdepartmentId, setSubdepartmentId] = useState(
@@ -33,6 +34,7 @@ export default function PegawaiPage() {
     setNip('');
     setName('');
     setPassword('');
+    setPin('');
     setRole('staff');
     setDepartmentId(DEPARTMENTS[0].id);
     setSubdepartmentId(DEPARTMENTS[0].subdepartments[0]?.id || '');
@@ -45,7 +47,8 @@ export default function PegawaiPage() {
     setEditingEmployee(emp);
     setNip(emp.nip);
     setName(emp.name);
-    setPassword('');
+    setPassword(emp.password || '');
+    setPin(emp.pin || '');
     setRole(emp.role);
     setDepartmentId(emp.departmentId);
     setSubdepartmentId(emp.subdepartmentId || '');
@@ -65,22 +68,36 @@ export default function PegawaiPage() {
     }
 
     if (editingEmployee) {
-      const res = updateEmployee({
-        id: editingEmployee.id,
-        nip,
-        name,
-        role,
-        departmentId,
-        subdepartmentId: subdepartmentId || undefined,
-      });
-      if (!res.success) {
-        setFormError(res.message || 'Gagal menyimpan perubahan.');
+      if (pin && !/^\d{6}$/.test(pin)) {
+        setFormError('PIN presensi harus berupa 6 digit angka.');
         return;
       }
-      setIsModalOpen(false);
+      setIsSubmitting(true);
+      try {
+        const res = await updateEmployee({
+          id: editingEmployee.id,
+          nip,
+          name,
+          role,
+          departmentId,
+          subdepartmentId: subdepartmentId || undefined,
+          pin: pin || undefined,
+        });
+        if (!res.success) {
+          setFormError(res.message || 'Gagal menyimpan perubahan.');
+          return;
+        }
+        setIsModalOpen(false);
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       if (!password || password.length < 6) {
-        setFormError('Password minimal 6 karakter.');
+        setFormError('Password login minimal 6 karakter.');
+        return;
+      }
+      if (pin && !/^\d{6}$/.test(pin)) {
+        setFormError('PIN presensi harus berupa 6 digit angka jika diisi.');
         return;
       }
 
@@ -90,6 +107,7 @@ export default function PegawaiPage() {
           nip,
           name,
           password,
+          pin: pin || undefined,
           role,
           departmentId,
           subdepartmentId: subdepartmentId || undefined,
@@ -145,6 +163,8 @@ export default function PegawaiPage() {
             <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-3.5">Nama & NIP</th>
+                <th className="px-6 py-3.5">Password Login</th>
+                <th className="px-6 py-3.5">PIN Presensi</th>
                 <th className="px-6 py-3.5">Jabatan</th>
                 <th className="px-6 py-3.5">Subbagian</th>
                 <th className="px-6 py-3.5 text-right">Aksi</th>
@@ -161,6 +181,16 @@ export default function PegawaiPage() {
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-900">{emp.name}</div>
                       <div className="text-xs font-mono text-slate-500">{emp.nip}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-mono text-xs px-2 py-1 bg-slate-100 rounded text-slate-700 select-all">
+                        {emp.password ?? '••••••'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-mono text-xs px-2 py-1 bg-teal-50 border border-teal-200 rounded text-teal-800 font-bold select-all">
+                        {emp.pin ?? 'Belum ada'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
@@ -234,11 +264,19 @@ export default function PegawaiPage() {
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2 items-center">
                   <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
                     {roleObj?.label ?? emp.role}
                   </span>
                   <span className="text-[11px] text-slate-500">{subdept?.name ?? '—'}</span>
+                  {emp.password && (
+                    <span className="text-[11px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
+                      PW: {emp.password}
+                    </span>
+                  )}
+                  <span className="text-[11px] font-mono bg-teal-50 text-teal-700 px-2 py-0.5 rounded border border-teal-200">
+                    PIN: {emp.pin ?? 'Belum ada'}
+                  </span>
                 </div>
               </div>
             );
@@ -328,6 +366,23 @@ export default function PegawaiPage() {
                     </p>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    PIN Presensi (6 Digit)
+                  </label>
+                  <input
+                    type="password"
+                    maxLength={6}
+                    placeholder={editingEmployee ? "Biarkan jika tidak ingin mengubah PIN" : "6 digit angka (opsional jika baru)"}
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    PIN untuk memproses verifikasi absensi masuk & keluar pegawai (6 digit angka)
+                  </p>
+                </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Subbagian *</label>

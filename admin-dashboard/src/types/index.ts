@@ -22,6 +22,7 @@ export interface Employee {
   nip: string;
   name: string;
   password?: string;
+  pin?: string;
   role: 'kepala_bagian' | 'kepala_sub_bagian' | 'staff';
   departmentId: string;
   subdepartmentId?: string;

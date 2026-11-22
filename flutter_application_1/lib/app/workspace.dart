@@ -120,7 +120,7 @@ class _WorkspaceState extends State<Workspace> {
                     onRefresh: refresh,
                     displayName:
                         store.currentUser?.name ??
-                        (admin ? "Admin KPU" : "Andreas Sondakh"),
+                        (admin ? "Admin KPU" : "Pegawai"),
                     onNotifications: store.canAccessAdmin
                         ? () {
                             if (!store.canAccessAdmin) return;

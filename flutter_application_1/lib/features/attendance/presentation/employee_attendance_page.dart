@@ -1,14 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/ui/components.dart';
-import 'package:flutter_application_1/core/config/app_constants.dart';
 import 'package:flutter_application_1/core/utils/date_time.dart';
 import 'package:flutter_application_1/core/data/app_store.dart';
-import 'package:flutter/foundation.dart';
 import '../domain/attendance.dart';
 import '../domain/work_policy.dart';
-import '../services/device_attendance_service.dart';
 import '../data/presensi_sync_service.dart';
 import '../../leave/presentation/leave_request_dialog.dart';
+import 'widgets/attendance_flow_dialog.dart';
+import 'widgets/change_pin_dialog.dart';
 import 'work_duration.dart';
 
 class EmployeeAttendancePage extends StatefulWidget {
@@ -40,6 +40,57 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _restoreTodayAttendance();
+  }
+
+  /// Memulihkan riwayat presensi hari ini agar durasi jam kerja tidak hilang saat keluar aplikasi / logout
+  Future<void> _restoreTodayAttendance() async {
+    final nip = store.currentUser?.nip;
+    if (nip == null || nip.isEmpty) return;
+    final cacheKey = 'kpu_presensi_${nip}_${dayKey(now)}';
+
+    // 1. Cek penyimpanan lokal SharedPreferences untuk respon cepat
+    if (today == null) {
+      final cached = store.prefs.getString(cacheKey);
+      if (cached != null) {
+        try {
+          final map = jsonDecode(cached) as Map<String, dynamic>;
+          final att = Attendance.fromJson(map);
+          if (!store.records.any((r) => dayKey(r.entered) == dayKey(now))) {
+            if (mounted) {
+              setState(() {
+                store.records.insert(0, att);
+              });
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 2. Sinkronkan dengan Firestore presensi secara cloud
+    try {
+      final remoteAtt = await PresensiSyncService.ambilPresensiHariIni(nip, now);
+      if (remoteAtt != null && mounted) {
+        final existingIndex = store.records.indexWhere((r) => dayKey(r.entered) == dayKey(now));
+        if (existingIndex == -1) {
+          setState(() {
+            store.records.insert(0, remoteAtt);
+          });
+        } else {
+          if (store.records[existingIndex].exited == null && remoteAtt.exited != null) {
+            setState(() {
+              store.records[existingIndex].exited = remoteAtt.exited;
+            });
+          }
+        }
+        await store.prefs.setString(cacheKey, jsonEncode(remoteAtt.toJson()));
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     final wfh = WorkPolicy.isWfh(now, wfhEligible);
     final active = today;
@@ -53,10 +104,10 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
               ? 'Work from office'
               : widget.page == 3
               ? 'Work from home'
-              : 'Halo, ${store.currentUser?.name ?? 'Andreas'} 👋',
-          '${store.currentUser?.unitName ?? 'Keuangan'} • KPU Sulawesi Utara',
+              : 'Halo, ${store.currentUser?.name ?? 'Pegawai'} 👋',
+          '${store.currentUser?.unitName ?? 'KPU'} • KPU Sulawesi Utara',
           action: pill(
-            store.isRemote ? 'Firebase • Prototipe' : 'Mode demo lokal',
+            store.isRemote ? 'Firebase Online' : 'Mode Offline',
             teal,
           ),
         ),
@@ -144,8 +195,8 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                 const SizedBox(height: 22),
                 text(
                   wfh
-                      ? 'WFH aktif (Selasa/Jumat): verifikasi geolokasi dinonaktifkan.'
-                      : 'WFO: posisi asli, akurasi ≤ 50 m, dan radius kantor wajib terpenuhi.',
+                      ? 'WFH aktif (Selasa/Jumat): verifikasi radius geofencing kantor dinonaktifkan.'
+                      : 'WFO: Berada di dalam radius geofencing kantor KPU Sulawesi Utara wajib terpenuhi.',
                   color: muted,
                   size: 12,
                 ),
@@ -159,20 +210,24 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                     icon: Icon(
                       busy
                           ? Icons.hourglass_empty
-                          : Icons.face_retouching_natural,
+                          : active == null
+                          ? Icons.login_rounded
+                          : Icons.logout_rounded,
                     ),
                     label: Text(
                       busy
-                          ? 'Memverifikasi...'
+                          ? 'Memproses Presensi...'
                           : active == null
-                          ? 'Scan wajah & absen masuk'
-                          : 'Scan wajah & absen keluar',
+                          ? 'Presensi Masuk Sekarang'
+                          : 'Presensi Keluar Sekarang',
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 text(
-                  'Pengambilan selfie untuk uji alur. Pencocokan wajah dan liveness belum terhubung; catatan ini bukan presensi resmi.',
+                  wfh
+                      ? 'Mode WFH: Presensi berbasis autentikasi akun & PIN/Fingerprint.'
+                      : 'Mode WFO: Presensi berbasis deteksi Geofencing kantor & verifikasi PIN/Fingerprint.',
                   size: 11,
                   color: muted,
                 ),
@@ -194,6 +249,14 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                 icon: const Icon(Icons.edit_calendar_outlined, size: 18),
                 label: const Text('Ajukan izin / cuti'),
               ),
+              OutlinedButton.icon(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (ctx) => ChangePinDialog(store: store),
+                ),
+                icon: const Icon(Icons.pin_rounded, size: 18),
+                label: const Text('Ganti PIN Presensi'),
+              ),
               if (widget.onOpenAdmin != null)
                 TextButton(
                   onPressed: widget.onOpenAdmin,
@@ -214,66 +277,74 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
       );
       return;
     }
-    if (kIsWeb) {
-      showMessage(
-        context,
-        'Presensi perangkat tersedia pada aplikasi Android/iOS. Web digunakan untuk dashboard admin.',
-      );
-      return;
-    }
+
+    final isCheckOut = today != null;
+    final expectedPin = store.currentUser?.pin;
+
+    // Tampilkan Dialog Alur Deteksi Geofencing & Autentikasi PIN/Fingerprint
+    final flowResult = await showDialog<AttendanceFlowResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AttendanceFlowDialog(
+        store: store,
+        isCheckOut: isCheckOut,
+        isWfh: wfh,
+        expectedPin: expectedPin,
+      ),
+    );
+
+    if (flowResult == null || !flowResult.verified) return;
+
     setState(() => busy = true);
     try {
-      final captured = await DeviceAttendanceService().captureSelfie(
-        store,
-        wfh: WorkPolicy.isWfh(witaNow(), wfhEligible),
-      );
-      if (!captured) return;
-      if (!mounted) return;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Simpan presensi demo?'),
-          content: const Text(
-            'Selfie berhasil diambil. Verifikasi identitas wajah belum tersedia. Catatan digunakan untuk pengujian dan disimpan sesuai mode penyimpanan aktif.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Simpan demo'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true || !mounted) return;
-      final stamp = witaNow();
-      Attendance? newRecord;
+      final stamp = flowResult.timestamp;
+      final nip = store.currentUser?.nip;
+      final cacheKey = 'kpu_presensi_${nip}_${dayKey(now)}';
+      Attendance? recordToSave;
+
       setState(() {
-        if (today == null) {
-          newRecord = Attendance(
-            store.currentUser?.name ?? 'Andreas R. Sondakh',
-            store.currentUser?.unitName ?? divisions.first,
+        if (!isCheckOut) {
+          // Rekam Absen Masuk
+          final newRecord = Attendance(
+            store.currentUser?.name ?? 'Pegawai',
+            store.currentUser?.unitName ?? 'Subbagian',
             wfh ? 'WFH' : 'WFO',
             stamp,
           );
-          store.records.insert(0, newRecord!);
+          store.records.insert(0, newRecord);
+          recordToSave = newRecord;
         } else {
+          // Rekam Absen Keluar
           today!.exited = stamp;
-          newRecord = today;
+          recordToSave = today;
         }
       });
-      if (!await store.save()) return;
-      if (newRecord != null) {
-        PresensiSyncService.kirimPresensi(
-          record: newRecord!,
-          nip: store.currentUser?.nip,
+
+      if (recordToSave != null) {
+        // Simpan ke SharedPreferences lokal (durasi kerja tidak hilang jika logout/reopen)
+        if (nip != null) {
+          await store.prefs.setString(cacheKey, jsonEncode(recordToSave!.toJson()));
+        }
+
+        // Sinkronisasi data ke Cloud Firestore
+        await PresensiSyncService.kirimPresensi(
+          record: recordToSave!,
+          nip: nip,
           nama: store.currentUser?.name,
+          latitude: flowResult.latitude,
+          longitude: flowResult.longitude,
         );
       }
-      if (mounted) showMessage(context, 'Presensi demo tersimpan.');
+
+      await store.save();
+
+      if (mounted) {
+        final actionName = isCheckOut ? 'Absen keluar' : 'Absen masuk';
+        showMessage(
+          context,
+          '$actionName berhasil dicatat pk. ${clockText(stamp)} WITA.',
+        );
+      }
     } catch (e) {
       if (mounted) {
         showMessage(context, e.toString().replaceFirst('Exception: ', ''));
