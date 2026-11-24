@@ -105,7 +105,7 @@ export default function RekapPage() {
   return (
     <>
       <Topbar title="Rekapitulasi Kehadiran Pegawai" />
-      <main className="p-4 sm:p-8 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 xl:p-8 space-y-5 sm:space-y-6 w-full">
         {/* Filter Bar */}
         <div className="bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">

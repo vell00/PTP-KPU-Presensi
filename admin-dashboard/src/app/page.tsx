@@ -34,61 +34,63 @@ export default function DashboardPage() {
   return (
     <>
       <Topbar title="Ringkasan Dashboard" />
-      <main className="p-4 sm:p-8 space-y-6 sm:space-y-8 max-w-7xl">
+      <main className="p-4 sm:p-6 xl:p-8 space-y-5 sm:space-y-6 w-full">
         {/* Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
           {/* Total Pegawai */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Total Pegawai</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
-                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Pegawai</span>
+              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shadow-xs">
+                <Users className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-slate-900">{totalEmployees}</div>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-1">Terdaftar dalam sistem</p>
+            <div className="text-3xl font-black text-slate-900">{totalEmployees}</div>
+            <p className="text-xs text-slate-400 mt-1.5 font-medium">Terdaftar dalam sistem</p>
           </div>
 
           {/* Kehadiran */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Presensi</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 flex items-center justify-center text-[#D52832]">
-                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Presensi</span>
+              <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-[#D52832] shadow-xs">
+                <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-[#07142F]">{todayRecords.length}</div>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
-              <span className="text-[#07142F] font-bold">{wfoCount} WFO</span> •{' '}
+            <div className="text-3xl font-black text-[#07142F]">{todayRecords.length}</div>
+            <p className="text-xs text-slate-400 mt-1.5 font-medium">
+              <span className="text-[#07142F] font-bold">{wfoCount} WFO</span>
+              {' · '}
               <span className="text-[#D52832] font-bold">{wfhCount} WFH</span>
             </p>
           </div>
 
           {/* Ketepatan Waktu */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Ketepatan</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#07142F]">
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Ketepatan</span>
+              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-[#07142F] shadow-xs">
+                <Clock className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-[#07142F]">{onTimeCount}</div>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
-              <span className="text-[#07142F] font-bold">{onTimeCount} tepat</span> •{' '}
+            <div className="text-3xl font-black text-[#07142F]">{onTimeCount}</div>
+            <p className="text-xs text-slate-400 mt-1.5 font-medium">
+              <span className="text-[#07142F] font-bold">{onTimeCount} tepat</span>
+              {' · '}
               <span className="text-[#D52832] font-bold">{lateCount} terlambat</span>
             </p>
           </div>
 
           {/* Izin Menunggu */}
-          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between text-slate-500 mb-2 sm:mb-3">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Pengajuan</span>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 flex items-center justify-center text-[#D52832]">
-                <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pengajuan</span>
+              <div className="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-[#D52832] shadow-xs">
+                <CalendarDays className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-[#07142F]">{pendingRequests.length}</div>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-1">
+            <div className="text-3xl font-black text-[#07142F]">{pendingRequests.length}</div>
+            <p className="text-xs text-slate-400 mt-1.5 font-medium">
               {pendingRequests.length > 0 ? (
                 <span className="text-[#D52832] font-bold">Menunggu persetujuan</span>
               ) : (

@@ -38,11 +38,11 @@ export default function Sidebar() {
       {/* Brand Header */}
       <div className="p-5 lg:p-6 flex items-center justify-between border-b border-slate-100">
         <div>
-          <h1 className="text-lg font-black tracking-tight text-[#07142F] leading-snug">
-            PTP-KPU-Presensi
+          <h1 className="text-base font-black tracking-tight text-[#07142F] leading-snug">
+            Presensi KPU Sulut
           </h1>
-          <span className="text-[11px] font-bold text-slate-400 tracking-wider">
-            Sulawesi Utara
+          <span className="text-[11px] font-bold text-[#D52832] tracking-wider uppercase">
+            Portal Administrator
           </span>
         </div>
         {/* Close button on mobile */}

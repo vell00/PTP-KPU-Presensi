@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'office_illustration.dart';
 import '../../../users/domain/organization.dart';
 
 const _navy = Color(0xFF07142F);
-const _red = Color(0xFFD52832);
+const _navyDark = Color(0xFF040C1D);
+const _kpuRed = Color(0xFFD52832);
 
 class SignUpPanel extends StatefulWidget {
   final bool busy;
@@ -61,311 +61,380 @@ class _SignUpPanelState extends State<SignUpPanel> {
     );
   }
 
-  InputDecoration _decoration(String hint, IconData icon) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8E96A4)),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF9199A7)),
-        filled: true,
-        fillColor: const Color(0xFFF3F4F6),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(11),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(11),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(11),
-          borderSide: const BorderSide(color: _red),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      );
+  InputDecoration _ptpInputDecoration({
+    required String hint,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF7F8B9F)),
+      prefixIcon: Icon(prefixIcon, size: 18, color: const Color(0xFF8F9BB0)),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: const Color(0xFF1E2B45).withValues(alpha: 0.95),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF2E3F5F), width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF2E3F5F), width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _kpuRed, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+    );
+  }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: _navy,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -.8),
-              radius: 1.2,
-              colors: [Color(0xFF16366C), _navy],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _navyDark,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. Background Foto Kantor KPU Sulut
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/kantor_kpu_sulut.jpg',
+              fit: BoxFit.cover,
+              alignment: Alignment.center,
+              errorBuilder: (context, error, stackTrace) => Container(color: _navyDark),
             ),
           ),
-          child: SafeArea(
+
+          // 2. Lapisan Biru Tua Transparan & Gradasi
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    _navyDark.withValues(alpha: 0.88),
+                    _navy.withValues(alpha: 0.85),
+                    const Color(0xFF0D224A).withValues(alpha: 0.90),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 3. Konten Form Registrasi Mobile Centered
+          SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: .24),
-                          blurRadius: 40,
-                          offset: const Offset(0, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // LOGO KPU SULUT DI ATAS CARD REGISTRASI
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Form(
-                      key: _form,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const OfficeIllustration(),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Daftar Akun Pegawai',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _navy,
-                              fontSize: 19,
-                              fontWeight: FontWeight.w800,
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/logo_kpu_sulut.jpg',
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, st) => Container(
+                              color: _kpuRed,
+                              child: const Icon(Icons.how_to_vote, color: Colors.white, size: 30),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'KPU Provinsi Sulawesi Utara',
-                            style: TextStyle(
-                              color: Color(0xFF7A8393),
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
-                          // NIP
-                          TextFormField(
-                            controller: _nipController,
-                            enabled: !widget.busy,
-                            keyboardType: TextInputType.number,
-                            maxLength: 18,
-                            decoration: _decoration(
-                              'NIP (18 digit angka)',
-                              Icons.badge_outlined,
-                            ).copyWith(counterText: ''),
-                            validator: (value) {
-                              if (value == null || !validNip(value.trim())) {
-                                return 'NIP harus tepat 18 digit angka';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
+                      const Text(
+                        'PTP-KPU SULAWESI UTARA',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFFCBD5E1),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Pendaftaran Pegawai Baru',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
-                          // Nama Lengkap
-                          TextFormField(
-                            controller: _nameController,
-                            enabled: !widget.busy,
-                            textCapitalization: TextCapitalization.words,
-                            decoration: _decoration(
-                              'Nama Lengkap',
-                              Icons.person_outline_rounded,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Nama lengkap wajib diisi';
-                              }
-                              return null;
-                            },
+                      // CARD FORM
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 26),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF141F36).withValues(alpha: 0.94),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: const Color(0xFF2E3F5F).withValues(alpha: 0.8),
+                            width: 1.2,
                           ),
-                          const SizedBox(height: 12),
-
-                          // Dropdown UNIT / JABATAN
-                          DropdownButtonFormField<String>(
-                            initialValue: _selectedUnitJabatan,
-                            isExpanded: true,
-                            decoration: _decoration(
-                              'UNIT / JABATAN',
-                              Icons.work_outline_rounded,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              blurRadius: 30,
+                              offset: const Offset(0, 14),
                             ),
-                            style: const TextStyle(
-                              color: _navy,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            items: allUnitsAndPositions.map((unit) {
-                              return DropdownMenuItem<String>(
-                                value: unit,
-                                child: Text(
-                                  unit,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 12),
+                          ],
+                        ),
+                        child: AutofillGroup(
+                          child: Form(
+                            key: _form,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // NIP Field
+                                const Text(
+                                  'Nomor Induk Pegawai (NIP) *',
+                                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
-                              );
-                            }).toList(),
-                            onChanged: widget.busy
-                                ? null
-                                : (val) {
-                                    if (val != null) {
-                                      setState(() => _selectedUnitJabatan = val);
-                                    }
-                                  },
-                            validator: (val) {
-                              if (val == null || val.isEmpty) {
-                                return 'Pilih UNIT / JABATAN';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Password
-                          TextFormField(
-                            controller: _passwordController,
-                            enabled: !widget.busy,
-                            obscureText: _obscurePassword,
-                            decoration: _decoration(
-                              'Password Login (minimal 6 karakter)',
-                              Icons.lock_outline_rounded,
-                            ).copyWith(
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(
-                                    () => _obscurePassword = !_obscurePassword),
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  size: 18,
-                                  color: const Color(0xFF9199A7),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _nipController,
+                                  enabled: !widget.busy,
+                                  keyboardType: TextInputType.number,
+                                  textInputAction: TextInputAction.next,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                                  decoration: _ptpInputDecoration(
+                                    hint: '18 digit NIP',
+                                    prefixIcon: Icons.badge_outlined,
+                                  ),
+                                  validator: (value) =>
+                                      value == null || !validNip(value.trim())
+                                      ? 'NIP harus 18 digit angka'
+                                      : null,
                                 ),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.length < 6) {
-                                return 'Password minimal 6 karakter';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
+                                const SizedBox(height: 14),
 
-                          // Konfirmasi Password
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            enabled: !widget.busy,
-                            obscureText: _obscureConfirm,
-                            decoration: _decoration(
-                              'Konfirmasi Password',
-                              Icons.lock_reset_rounded,
-                            ).copyWith(
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(
-                                    () => _obscureConfirm = !_obscureConfirm),
-                                icon: Icon(
-                                  _obscureConfirm
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                  size: 18,
-                                  color: const Color(0xFF9199A7),
+                                // Nama Lengkap
+                                const Text(
+                                  'Nama Lengkap Pegawai *',
+                                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value != _passwordController.text) {
-                                return 'Konfirmasi password tidak cocok';
-                              }
-                              return null;
-                            },
-                          ),
-
-                          if (widget.notice != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: Text(
-                                widget.notice!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: _navy,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _nameController,
+                                  enabled: !widget.busy,
+                                  textInputAction: TextInputAction.next,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  decoration: _ptpInputDecoration(
+                                    hint: 'Nama lengkap beserta gelar',
+                                    prefixIcon: Icons.person_outline_rounded,
+                                  ),
+                                  validator: (value) =>
+                                      value == null || value.trim().isEmpty
+                                      ? 'Nama wajib diisi'
+                                      : null,
                                 ),
-                              ),
-                            ),
+                                const SizedBox(height: 14),
 
-                          if (widget.error != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: Text(
-                                widget.error!,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: _red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                                // Dropdown UNIT / JABATAN
+                                const Text(
+                                  'UNIT / JABATAN *',
+                                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 11, fontWeight: FontWeight.w700),
                                 ),
-                              ),
-                            ),
-
-                          const SizedBox(height: 20),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _red,
-                                disabledBackgroundColor: const Color(0xFFEAA5AA),
-                                padding: const EdgeInsets.symmetric(vertical: 15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(11),
-                                ),
-                              ),
-                              onPressed: widget.busy ? null : _submit,
-                              icon: widget.busy
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
+                                const SizedBox(height: 6),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _selectedUnitJabatan,
+                                  isExpanded: true,
+                                  dropdownColor: const Color(0xFF1B2844),
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  decoration: _ptpInputDecoration(
+                                    hint: 'Pilih UNIT / JABATAN',
+                                    prefixIcon: Icons.business_center_outlined,
+                                  ),
+                                  items: allUnitsAndPositions.map((item) {
+                                    return DropdownMenuItem<String>(
+                                      value: item,
+                                      child: Text(
+                                        item,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(color: Colors.white),
                                       ),
-                                    )
-                                  : const Icon(Icons.person_add_rounded, size: 18),
-                              label: Text(
-                                widget.busy ? 'Mendaftarkan...' : 'Daftar Sekarang',
-                                style: const TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Sudah punya akun? ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF7A8393),
+                                    );
+                                  }).toList(),
+                                  onChanged: widget.busy
+                                      ? null
+                                      : (val) {
+                                          if (val != null) setState(() => _selectedUnitJabatan = val);
+                                        },
                                 ),
-                              ),
-                              GestureDetector(
-                                onTap: widget.busy ? null : widget.onBackToLogin,
-                                child: const Text(
-                                  'Masuk di sini',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _red,
-                                    fontWeight: FontWeight.bold,
+                                const SizedBox(height: 14),
+
+                                // Password
+                                const Text(
+                                  'Kata Sandi Akun *',
+                                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  enabled: !widget.busy,
+                                  obscureText: _obscurePassword,
+                                  textInputAction: TextInputAction.next,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  decoration: _ptpInputDecoration(
+                                    hint: 'Minimal 6 karakter',
+                                    prefixIcon: Icons.lock_outline_rounded,
+                                    suffixIcon: IconButton(
+                                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                      icon: Icon(
+                                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                        size: 17,
+                                        color: const Color(0xFF8F9BB0),
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (value) =>
+                                      value == null || value.length < 6
+                                      ? 'Kata sandi minimal 6 karakter'
+                                      : null,
+                                ),
+                                const SizedBox(height: 14),
+
+                                // Konfirmasi Password
+                                const Text(
+                                  'Konfirmasi Kata Sandi *',
+                                  style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(height: 6),
+                                TextFormField(
+                                  controller: _confirmPasswordController,
+                                  enabled: !widget.busy,
+                                  obscureText: _obscureConfirm,
+                                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  decoration: _ptpInputDecoration(
+                                    hint: 'Ulangi kata sandi',
+                                    prefixIcon: Icons.lock_clock_outlined,
+                                    suffixIcon: IconButton(
+                                      onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                                      icon: Icon(
+                                        _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                        size: 17,
+                                        color: const Color(0xFF8F9BB0),
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (value) =>
+                                      value != _passwordController.text
+                                      ? 'Konfirmasi kata sandi tidak cocok'
+                                      : null,
+                                ),
+
+                                if (widget.error != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 14),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.error_outline, size: 15, color: Color(0xFFFCA5A5)),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              widget.error!,
+                                              style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 11),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                const SizedBox(height: 20),
+
+                                // Tombol Daftar
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: _kpuRed,
+                                      disabledBackgroundColor: _kpuRed.withValues(alpha: 0.5),
+                                      padding: const EdgeInsets.symmetric(vertical: 15),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    onPressed: widget.busy ? null : _submit,
+                                    child: widget.busy
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                          )
+                                        : const Text(
+                                            'Daftar Sekarang',
+                                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                                          ),
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 14),
+
+                                // Kembali ke Login
+                                Center(
+                                  child: TextButton.icon(
+                                    onPressed: widget.busy ? null : widget.onBackToLogin,
+                                    icon: const Icon(Icons.arrow_back, size: 15, color: Color(0xFF94A3B8)),
+                                    label: const Text(
+                                      'Sudah punya akun? Masuk',
+                                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }

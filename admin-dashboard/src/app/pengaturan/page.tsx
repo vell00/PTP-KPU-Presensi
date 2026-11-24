@@ -105,7 +105,7 @@ export default function PengaturanPage() {
   return (
     <>
       <Topbar title="Pengaturan Lokasi Kantor & Jadwal WFH" />
-      <main className="p-4 sm:p-8 space-y-6 max-w-5xl">
+      <main className="p-4 sm:p-6 xl:p-8 space-y-5 sm:space-y-6 w-full">
         {savedSuccess && (
           <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-sm font-semibold text-[#D52832]">
             <CheckCircle2 className="w-5 h-5 text-[#D52832] shrink-0" />

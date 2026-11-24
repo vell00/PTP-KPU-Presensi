@@ -31,7 +31,7 @@ export default function TukinPage() {
   return (
     <>
       <Topbar title="Tunjangan Kinerja (Tukin)" />
-      <main className="p-4 sm:p-8 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 xl:p-8 space-y-5 sm:space-y-6 w-full">
         {/* Banner Penjelasan Formula */}
         <div className="bg-[#07142F] rounded-2xl p-6 text-white shadow-md border border-[#16366C]">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

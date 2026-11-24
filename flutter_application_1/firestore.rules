@@ -1,68 +1,136 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function profile() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
-    function ready() {
-      return request.auth != null && profile().active == true
-        && profile().mustChangePassword == false
-        && request.auth.token.sessionVersion == profile().sessionVersion;
+
+    // Helper functions
+    function profile() { 
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; 
     }
-    function isAdmin() { return ready() && profile().isAdmin == true; }
+
+    function ready() {
+      return request.auth != null 
+        && profile().active == true
+        && profile().mustChangePassword == false;
+    }
+
+    function isAdmin() { 
+      return ready() && profile().isAdmin == true; 
+    }
+
+    // 1. Koleksi Pengguna / Pegawai (NIP, Nama, Password, PIN, Jabatan)
     match /users/{uid} {
       allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
       allow list: if isAdmin();
-      allow write: if false;
+
+      function validProfile() {
+        return request.resource.data.keys().hasOnly([
+          'nip', 'name', 'password', 'pin', 'role', 'departmentId',
+          'subdepartmentId', 'active', 'isAdmin', 'mustChangePassword'
+        ])
+        && request.resource.data.nip is string
+        && request.resource.data.nip.matches('^[0-9]{18}$')
+        && request.resource.data.name is string
+        && request.resource.data.role in ['staff', 'admin'];
+      }
+
+      allow write: if request.auth != null && (validProfile() || request.auth.uid == uid || isAdmin());
     }
+
+    // 2. Koleksi Presensi Geofencing (Absen Masuk & Keluar Pegawai)
+    match /presensi/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 3. Kebijakan Presensi (WFO / WFH & Lokasi)
     match /policies/attendance {
       allow get: if ready();
-      allow write: if isAdmin() && request.resource.data.keys().hasOnly(['fridayWfh','latitude','longitude','radius'])
-        && validState({'records':[],'requests':[],'employees':[],
-          'fridayWfh':request.resource.data.fridayWfh,'latitude':request.resource.data.latitude,
-          'longitude':request.resource.data.longitude,'radius':request.resource.data.radius});
+      allow write: if isAdmin() 
+        && request.resource.data.keys().hasOnly(['fridayWfh', 'latitude', 'longitude', 'radius'])
+        && validState({
+          'records': [],
+          'requests': [],
+          'employees': [],
+          'fridayWfh': request.resource.data.fridayWfh,
+          'latitude': request.resource.data.latitude,
+          'longitude': request.resource.data.longitude,
+          'radius': request.resource.data.radius
+        });
     }
+
+    // 4. Workspace Pribadi Pegawai
     match /employeeWorkspaces/{uid} {
-      function owner() { return ready() && request.auth.uid == uid; }
-      function validPersonal() {
-        return request.resource.data.keys().hasOnly(['revision','data','updatedAt','updatedBy'])
-          && request.resource.data.updatedBy == uid && request.resource.data.updatedAt == request.time
-          && request.resource.data.revision is int
-          && request.resource.data.data.keys().hasOnly(['records','requests'])
-          && request.resource.data.data.records is list && request.resource.data.data.records.size() <= 500
-          && request.resource.data.data.requests is list && request.resource.data.data.requests.size() <= 200;
+      function owner() { 
+        return ready() && request.auth.uid == uid; 
       }
+
+      function validPersonal() {
+        return request.resource.data.keys().hasOnly(['revision', 'data', 'updatedAt', 'updatedBy'])
+          && request.resource.data.updatedBy == uid 
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.revision is int
+          && request.resource.data.data.keys().hasOnly(['records', 'requests'])
+          && request.resource.data.data.records is list 
+          && request.resource.data.data.records.size() <= 500
+          && request.resource.data.data.requests is list 
+          && request.resource.data.data.requests.size() <= 200;
+      }
+
       allow get: if owner();
       allow create: if owner() && validPersonal() && request.resource.data.revision == 1;
       allow update: if owner() && validPersonal() && request.resource.data.revision == resource.data.revision + 1;
     }
+
+    // Helper validasi state workspace utama
     function validState(data) {
       return data is map
-        && data.keys().hasAll(['records','requests','employees','fridayWfh','latitude','longitude','radius'])
-        && data.keys().hasOnly(['records','requests','employees','fridayWfh','latitude','longitude','radius'])
+        && data.keys().hasAll(['records', 'requests', 'employees', 'fridayWfh', 'latitude', 'longitude', 'radius'])
+        && data.keys().hasOnly(['records', 'requests', 'employees', 'fridayWfh', 'latitude', 'longitude', 'radius'])
         && data.records is list && data.records.size() <= 500
         && data.requests is list && data.requests.size() <= 200
         && data.employees is list && data.employees.size() <= 500
         && data.fridayWfh is bool
         && data.radius is number && data.radius >= 50 && data.radius <= 1000
-        && ((data.latitude == null && data.longitude == null)
+        && (
+          (data.latitude == null && data.longitude == null)
           || (data.latitude is number && data.latitude >= -90 && data.latitude <= 90
-            && data.longitude is number && data.longitude >= -180 && data.longitude <= 180));
+              && data.longitude is number && data.longitude >= -180 && data.longitude <= 180)
+        );
     }
+
     function validEnvelope() {
-      return request.resource.data.keys().hasAll(['revision','data','updatedAt','updatedBy'])
-        && request.resource.data.keys().hasOnly(['revision','data','updatedAt','updatedBy'])
+      return request.resource.data.keys().hasAll(['revision', 'data', 'updatedAt', 'updatedBy'])
+        && request.resource.data.keys().hasOnly(['revision', 'data', 'updatedAt', 'updatedBy'])
         && request.resource.data.revision is int
         && request.resource.data.updatedAt == request.time
         && request.resource.data.updatedBy == request.auth.uid
         && validState(request.resource.data.data);
     }
-    // Administrative prototype; employees use isolated personal workspaces.
+
+    // 5. Workspace KPU Sulut (Admin)
     match /workspaces/kpu-sulut {
       allow get: if isAdmin();
       allow create: if isAdmin() && validEnvelope() && request.resource.data.revision == 1;
-      allow update: if isAdmin() && validEnvelope()
-        && request.resource.data.revision == resource.data.revision + 1;
+      allow update: if isAdmin() && validEnvelope() && request.resource.data.revision == resource.data.revision + 1;
       allow list, delete: if false;
     }
-    match /{document=**} { allow read, write: if false; }
+
+    // 6. Koleksi Pengajuan Izin & Cuti
+    match /requests/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // 7. Pengaturan Umum Kantor (settings/general)
+    match /settings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Blokir dokumen lainnya
+    match /{document=**} { 
+      allow read, write: if false; 
+    }
   }
 }

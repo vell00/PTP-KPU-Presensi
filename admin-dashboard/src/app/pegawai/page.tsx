@@ -133,7 +133,7 @@ export default function PegawaiPage() {
   return (
     <>
       <Topbar title="Manajemen Pegawai" />
-      <main className="p-4 sm:p-8 space-y-6 max-w-7xl">
+      <main className="p-4 sm:p-6 xl:p-8 space-y-5 sm:space-y-6 w-full">
         {/* Actions bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           <div className="relative flex-1 max-w-md">
