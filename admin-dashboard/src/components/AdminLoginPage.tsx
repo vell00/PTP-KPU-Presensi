@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { useAdminAuth } from '@/lib/auth';
-import { ALL_UNITS_AND_POSITIONS } from '@/lib/constants';
 import {
   ShieldCheck,
   Lock,
@@ -12,32 +11,24 @@ import {
   EyeOff,
   AlertCircle,
   MapPin,
-  CheckCircle2,
-  Briefcase,
   Fingerprint,
   Clock,
   Building2,
 } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  const { login, signUpAdmin } = useAdminAuth();
+  const { login } = useAdminAuth();
 
-  const [isSignUp, setIsSignUp] = useState(false);
   const [nip, setNip] = useState('');
-  const [name, setName] = useState('');
-  const [unitJabatan, setUnitJabatan] = useState(ALL_UNITS_AND_POSITIONS[0]);
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setSuccessMsg(null);
 
     const cleanNip = nip.trim();
     if (!cleanNip) {
@@ -53,35 +44,11 @@ export default function AdminLoginPage() {
       return;
     }
 
-    if (isSignUp) {
-      if (!name.trim()) {
-        setError('Nama lengkap wajib diisi.');
-        return;
-      }
-      if (password.length < 6) {
-        setError('Kata sandi minimal 6 karakter.');
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError('Konfirmasi kata sandi tidak cocok.');
-        return;
-      }
-
-      setBusy(true);
-      const res = await signUpAdmin(cleanNip, name, unitJabatan, password);
-      setBusy(false);
-      if (!res.success) {
-        setError(res.error || 'Pendaftaran admin gagal.');
-      } else {
-        setSuccessMsg('Akun Administrator berhasil didaftarkan! Mengalihkan ke dashboard...');
-      }
-    } else {
-      setBusy(true);
-      const res = await login(cleanNip, password);
-      setBusy(false);
-      if (!res.success) {
-        setError(res.error || 'Gagal masuk ke portal admin.');
-      }
+    setBusy(true);
+    const res = await login(cleanNip, password);
+    setBusy(false);
+    if (!res.success) {
+      setError(res.error || 'Gagal masuk ke portal admin.');
     }
   };
 
@@ -258,13 +225,13 @@ export default function AdminLoginPage() {
                 color: '#94a3b8',
               }}
             >
-              PTP-KPU PRESENSI
+              PORTAL RESMI SEKRETARIAT
             </span>
           </div>
 
           <h1
             style={{
-              fontSize: 'clamp(28px, 4vw, 48px)',
+              fontSize: 'clamp(28px, 4vw, 46px)',
               fontWeight: 900,
               color: '#ffffff',
               letterSpacing: '-0.03em',
@@ -272,8 +239,8 @@ export default function AdminLoginPage() {
               marginBottom: '1.25rem',
             }}
           >
-            Platform Terpadu{' '}
-            <span style={{ color: '#94a3b8' }}>Penunjang KPU.</span>
+            Sistem Presensi{' '}
+            <span style={{ color: '#94a3b8' }}>KPU Sulawesi Utara.</span>
           </h1>
 
           <p
@@ -371,7 +338,7 @@ export default function AdminLoginPage() {
                 }}
               >
                 <Lock style={{ width: '12px', height: '12px' }} />
-                <span>{isSignUp ? 'DAFTAR ADMIN BARU' : 'AKSES ADMINISTRATOR'}</span>
+                <span>AKSES ADMINISTRATOR</span>
               </div>
               <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>KPU Sulut</span>
             </div>
@@ -385,15 +352,13 @@ export default function AdminLoginPage() {
                 marginBottom: '0.25rem',
               }}
             >
-              {isSignUp ? 'Registrasi Administrator' : 'Selamat datang'}
+              Selamat datang
             </h2>
             <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '1.5rem' }}>
-              {isSignUp
-                ? 'Daftarkan akun administrator baru untuk mengelola portal.'
-                : 'Silakan masuk menggunakan NIP dan kata sandi akun Admin.'}
+              Silakan masuk menggunakan NIP dan kata sandi akun Admin.
             </p>
 
-            {/* Error / Success Alert */}
+            {/* Error Alert */}
             {error && (
               <div
                 style={{
@@ -411,26 +376,6 @@ export default function AdminLoginPage() {
               >
                 <AlertCircle style={{ width: '16px', height: '16px', color: '#D52832', flexShrink: 0, marginTop: '1px' }} />
                 <span style={{ lineHeight: 1.5 }}>{error}</span>
-              </div>
-            )}
-
-            {successMsg && (
-              <div
-                style={{
-                  marginBottom: '1.25rem',
-                  padding: '0.75rem',
-                  borderRadius: '0.75rem',
-                  background: 'rgba(16,185,129,0.15)',
-                  border: '1px solid rgba(16,185,129,0.30)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.625rem',
-                  fontSize: '12px',
-                  color: '#6ee7b7',
-                }}
-              >
-                <CheckCircle2 style={{ width: '16px', height: '16px', color: '#10b981', flexShrink: 0, marginTop: '1px' }} />
-                <span style={{ lineHeight: 1.5 }}>{successMsg}</span>
               </div>
             )}
 
@@ -473,70 +418,6 @@ export default function AdminLoginPage() {
                 </span>
               </div>
 
-              {/* Sign Up Extra Fields */}
-              {isSignUp && (
-                <>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.375rem' }}>
-                      Nama Lengkap Admin *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Nama lengkap beserta gelar"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.625rem 1rem',
-                        background: '#1E2B45',
-                        border: '1px solid #2E3F5F',
-                        borderRadius: '0.75rem',
-                        fontSize: '13px',
-                        color: '#fff',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                      onFocus={(e) => { e.target.style.borderColor = '#D52832'; e.target.style.boxShadow = '0 0 0 2px rgba(213,40,50,0.25)'; }}
-                      onBlur={(e) => { e.target.style.borderColor = '#2E3F5F'; e.target.style.boxShadow = 'none'; }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.375rem' }}>
-                      Unit / Jabatan *
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <Briefcase style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#64748b' }} />
-                      <select
-                        value={unitJabatan}
-                        onChange={(e) => setUnitJabatan(e.target.value)}
-                        style={{
-                          width: '100%',
-                          paddingLeft: '2.5rem',
-                          paddingRight: '1rem',
-                          paddingTop: '0.625rem',
-                          paddingBottom: '0.625rem',
-                          background: '#1E2B45',
-                          border: '1px solid #2E3F5F',
-                          borderRadius: '0.75rem',
-                          fontSize: '12px',
-                          color: '#fff',
-                          outline: 'none',
-                          boxSizing: 'border-box',
-                        }}
-                      >
-                        {ALL_UNITS_AND_POSITIONS.map((u) => (
-                          <option key={u} value={u} style={{ background: '#141F36', color: '#fff' }}>
-                            {u}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </>
-              )}
-
               {/* Kata Sandi */}
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.375rem' }}>
@@ -577,41 +458,6 @@ export default function AdminLoginPage() {
                 </div>
               </div>
 
-              {/* Konfirmasi Kata Sandi (Sign Up only) */}
-              {isSignUp && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.375rem' }}>
-                    Konfirmasi Kata Sandi *
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <Lock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#64748b' }} />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      placeholder="Ulangi kata sandi"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      style={{
-                        width: '100%',
-                        paddingLeft: '2.5rem',
-                        paddingRight: '1rem',
-                        paddingTop: '0.625rem',
-                        paddingBottom: '0.625rem',
-                        background: '#1E2B45',
-                        border: '1px solid #2E3F5F',
-                        borderRadius: '0.75rem',
-                        fontSize: '13px',
-                        color: '#fff',
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                      onFocus={(e) => { e.target.style.borderColor = '#D52832'; e.target.style.boxShadow = '0 0 0 2px rgba(213,40,50,0.25)'; }}
-                      onBlur={(e) => { e.target.style.borderColor = '#2E3F5F'; e.target.style.boxShadow = 'none'; }}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Tombol Submit */}
               <div style={{ paddingTop: '0.5rem' }}>
                 <button
@@ -651,37 +497,11 @@ export default function AdminLoginPage() {
                     />
                   ) : (
                     <>
-                      <span>{isSignUp ? 'Daftar Sebagai Admin' : 'Masuk ke Portal Admin'}</span>
+                      <span>Masuk ke Portal Admin</span>
                       <ArrowRight style={{ width: '16px', height: '16px' }} />
                     </>
                   )}
                 </button>
-              </div>
-
-              {/* Toggle Login / Sign Up */}
-              <div style={{ textAlign: 'center', paddingTop: '0.5rem' }}>
-                <p style={{ fontSize: '12px', color: '#64748b' }}>
-                  {isSignUp ? 'Sudah memiliki akun admin? ' : 'Perlu akses administrator baru? '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignUp(!isSignUp);
-                      setError(null);
-                      setSuccessMsg(null);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontWeight: 700,
-                      color: '#EE5A62',
-                      textDecoration: 'underline',
-                      fontSize: '12px',
-                    }}
-                  >
-                    {isSignUp ? 'Masuk di sini' : 'Daftar Akun Admin'}
-                  </button>
-                </p>
               </div>
             </form>
 
@@ -728,7 +548,7 @@ export default function AdminLoginPage() {
         }}
       >
         <span>© 2026 Komisi Pemilihan Umum Provinsi Sulawesi Utara</span>
-        <span>Platform Terpadu Penunjang KPU (PTP-KPU) • Versi Admin 2.0</span>
+        <span>Sistem Presensi KPU Sulawesi Utara • Versi Admin 2.0</span>
       </footer>
 
       <style>{`
