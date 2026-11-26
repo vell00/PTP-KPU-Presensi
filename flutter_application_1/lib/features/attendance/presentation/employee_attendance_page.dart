@@ -30,6 +30,9 @@ class EmployeeAttendancePage extends StatefulWidget {
 class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
   AppStore get store => widget.store;
   bool busy = false;
+  int? _filterDay;
+  int? _filterMonth;
+  int? _filterYear;
   bool get wfhEligible =>
       store.fridayWfh &&
       (!store.isRemote || store.currentUser?.subdepartmentId != null);
@@ -104,30 +107,247 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
           '${store.currentUser?.unitName ?? 'KPU'} • KPU Sulawesi Utara',
         ),
         if (widget.page == 1) ...[
-          ...store.records.map(
-            (r) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: card(
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.event_available, color: kpuRed),
-                  title: text(
-                    '${dayKey(r.entered)} • ${r.mode}',
-                    weight: FontWeight.w600,
+          Builder(
+            builder: (context) {
+              const monthNames = [
+                'Januari',
+                'Februari',
+                'Maret',
+                'April',
+                'Mei',
+                'Juni',
+                'Juli',
+                'Agustus',
+                'September',
+                'Oktober',
+                'November',
+                'Desember',
+              ];
+              final availableYears = <int>{
+                witaNow().year,
+                ...store.records.map((r) => r.entered.year),
+              }.toList()
+                ..sort((a, b) => b.compareTo(a));
+
+              final filteredRecords = store.records.where((r) {
+                if (_filterDay != null && r.entered.day != _filterDay) {
+                  return false;
+                }
+                if (_filterMonth != null && r.entered.month != _filterMonth) {
+                  return false;
+                }
+                if (_filterYear != null && r.entered.year != _filterYear) {
+                  return false;
+                }
+                return true;
+              }).toList()
+                ..sort((a, b) => b.entered.compareTo(a.entered));
+
+              final hasFilter =
+                  _filterDay != null || _filterMonth != null || _filterYear != null;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  card(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            text('Filter Riwayat Kehadiran', size: 13, weight: FontWeight.w700),
+                            if (hasFilter)
+                              TextButton.icon(
+                                onPressed: () => setState(() {
+                                  _filterDay = null;
+                                  _filterMonth = null;
+                                  _filterYear = null;
+                                }),
+                                icon: const Icon(Icons.close, size: 15),
+                                label: const Text('Reset', style: TextStyle(fontSize: 12)),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            SizedBox(
+                              width: 130,
+                              child: DropdownButtonFormField<int?>(
+                                key: ValueKey('day-$_filterDay'),
+                                initialValue: _filterDay,
+                                decoration: const InputDecoration(
+                                  labelText: 'Tanggal',
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('Semua'),
+                                  ),
+                                  ...List.generate(
+                                    31,
+                                    (idx) => DropdownMenuItem<int?>(
+                                      value: idx + 1,
+                                      child: Text('${idx + 1}'),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (v) => setState(() => _filterDay = v),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 160,
+                              child: DropdownButtonFormField<int?>(
+                                key: ValueKey('month-$_filterMonth'),
+                                initialValue: _filterMonth,
+                                decoration: const InputDecoration(
+                                  labelText: 'Bulan',
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('Semua'),
+                                  ),
+                                  ...List.generate(
+                                    12,
+                                    (idx) => DropdownMenuItem<int?>(
+                                      value: idx + 1,
+                                      child: Text(monthNames[idx]),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (v) => setState(() => _filterMonth = v),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 130,
+                              child: DropdownButtonFormField<int?>(
+                                key: ValueKey('year-$_filterYear'),
+                                initialValue: _filterYear,
+                                decoration: const InputDecoration(
+                                  labelText: 'Tahun',
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem<int?>(
+                                    value: null,
+                                    child: Text('Semua'),
+                                  ),
+                                  ...availableYears.map(
+                                    (y) => DropdownMenuItem<int?>(
+                                      value: y,
+                                      child: Text('$y'),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (v) => setState(() => _filterYear = v),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  subtitle: text(
-                    '${clockText(r.entered)} — ${clockText(r.exited)} WITA',
+                  const SizedBox(height: 14),
+                  ...filteredRecords.map(
+                    (r) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: card(
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            r.isMissedCheckOut
+                                ? Icons.warning_amber_rounded
+                                : Icons.event_available,
+                            color: r.isMissedCheckOut
+                                ? const Color(0xFFD97706)
+                                : kpuRed,
+                          ),
+                          title: text(
+                            '${dayKey(r.entered)} • ${r.mode}',
+                            weight: FontWeight.w600,
+                          ),
+                          subtitle: text(
+                            '${clockText(r.entered)} — ${r.exited != null ? '${clockText(r.exited)} WITA' : (r.isMissedCheckOut ? 'Tidak absen keluar' : 'Belum keluar')}',
+                          ),
+                          trailing: pill(
+                            r.status,
+                            r.isMissedCheckOut
+                                ? const Color(0xFFB45309)
+                                : r.status == 'Terlambat'
+                                ? kpuRed
+                                : navy,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  trailing: pill(r.status, navy),
-                ),
+                  if (filteredRecords.isEmpty)
+                    card(
+                      Center(
+                        child: text(
+                          hasFilter
+                              ? 'Tidak ada riwayat presensi pada filter tersebut.'
+                              : 'Belum ada riwayat presensi.',
+                          color: muted,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ] else ...[
+          if (store.records.any((r) => r.isMissedCheckOut)) ...[
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFD97706),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        text(
+                          'Terdapat presensi tanpa absen keluar',
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: const Color(0xFF92400E),
+                        ),
+                        const SizedBox(height: 4),
+                        text(
+                          'Tanggal: ${store.records.where((r) => r.isMissedCheckOut).map((r) => dayKey(r.entered)).take(3).join(', ')}. Status tercatat "Tidak Absen Pulang" dan dapat memengaruhi Tukin. Ajukan koreksi melalui menu Ajukan izin / cuti.',
+                          size: 11,
+                          color: const Color(0xFF78350F),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          if (store.records.isEmpty)
-            card(
-              Center(child: text('Belum ada riwayat presensi.', color: muted)),
-            ),
-        ] else ...[
+          ],
           card(
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,11 +467,6 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
                 onPressed: () => showLeaveRequestDialog(context, store),
                 icon: const Icon(Icons.edit_calendar_outlined, size: 18),
                 label: const Text('Ajukan izin / cuti'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => widget.onNavigate(2),
-                icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-                label: const Text('Tunjangan Kinerja (Tukin)'),
               ),
               OutlinedButton.icon(
                 onPressed: () => showDialog(

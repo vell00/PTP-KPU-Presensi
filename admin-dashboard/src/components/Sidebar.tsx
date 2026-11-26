@@ -10,7 +10,6 @@ import {
   CalendarDays,
   Settings,
   Fingerprint,
-  ShieldCheck,
   Menu,
   X,
   Coins,
@@ -87,17 +86,6 @@ export default function Sidebar() {
             </Link>
           );
         })}
-      </div>
-
-      {/* Info Card */}
-      <div className="p-4 mx-4 mb-4 rounded-xl bg-slate-50 border border-slate-100">
-        <div className="flex items-center gap-2 text-[#07142F] font-semibold text-xs mb-1">
-          <ShieldCheck className="w-4 h-4 text-[#D52832]" />
-          <span>Web Admin Portal</span>
-        </div>
-        <p className="text-[11px] text-slate-500 leading-relaxed">
-          Portal pengelola data KPU Sulut. Presensi pegawai dilakukan melalui aplikasi mobile.
-        </p>
       </div>
 
       {/* User Profile */}

@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import Topbar from '@/components/Topbar';
 import { useWorkspace } from '@/lib/store';
+import { useFeedback } from '@/components/FeedbackProvider';
 import { DEPARTMENTS, ROLES, ALL_UNITS_AND_POSITIONS } from '@/lib/constants';
 import { Employee } from '@/types';
 import { UserPlus, Pencil, Trash2, Search, X, Check, Key } from 'lucide-react';
 
 export default function PegawaiPage() {
   const { data, addEmployee, updateEmployee, deleteEmployee } = useWorkspace();
+  const { showToast, confirmAction } = useFeedback();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -88,6 +90,7 @@ export default function PegawaiPage() {
           return;
         }
         setIsModalOpen(false);
+        showToast('success', 'Data Pegawai Diperbarui', `Perubahan data untuk ${name} telah disimpan.`);
       } finally {
         setIsSubmitting(false);
       }
@@ -117,7 +120,8 @@ export default function PegawaiPage() {
           return;
         }
         setFormSuccess('Pegawai berhasil ditambahkan ke Firebase!');
-        setTimeout(() => setIsModalOpen(false), 1500);
+        showToast('success', 'Pegawai Ditambahkan', `${name} (${nip}) berhasil didaftarkan.`);
+        setTimeout(() => setIsModalOpen(false), 1200);
       } finally {
         setIsSubmitting(false);
       }
@@ -206,12 +210,19 @@ export default function PegawaiPage() {
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm(`Hapus pegawai "${emp.name}" dari sistem?`)) {
-                              deleteEmployee(emp.id);
+                          onClick={async () => {
+                            const ok = await confirmAction({
+                              title: 'Hapus Data Pegawai?',
+                              message: `Apakah Anda yakin ingin menghapus pegawai "${emp.name}" (${emp.nip}) dari sistem?`,
+                              confirmLabel: 'Ya, Hapus',
+                              variant: 'danger',
+                            });
+                            if (ok) {
+                              await deleteEmployee(emp.id);
+                              showToast('info', 'Pegawai Dihapus', `Data pegawai ${emp.name} telah dihapus.`);
                             }
                           }}
-                          className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                           title="Hapus"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -251,10 +262,19 @@ export default function PegawaiPage() {
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`Hapus "${emp.name}"?`)) deleteEmployee(emp.id);
+                      onClick={async () => {
+                        const ok = await confirmAction({
+                          title: 'Hapus Data Pegawai?',
+                          message: `Hapus "${emp.name}" dari sistem?`,
+                          confirmLabel: 'Ya, Hapus',
+                          variant: 'danger',
+                        });
+                        if (ok) {
+                          await deleteEmployee(emp.id);
+                          showToast('info', 'Pegawai Dihapus', `Data pegawai ${emp.name} telah dihapus.`);
+                        }
                       }}
-                      className="p-1.5 text-slate-500 hover:text-[#D52832] rounded-lg"
+                      className="p-1.5 text-slate-500 hover:text-[#D52832] rounded-lg cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

@@ -126,11 +126,10 @@ class WorkspaceSidebar extends StatelessWidget {
               );
             })
           else ...[
-            // Menu User: Dashboard (0), Riwayat Kehadiran (1), Tunjangan Kinerja (2)
+            // Menu User: Dashboard (0), Riwayat Kehadiran (1)
             ...[
               {'label': 'Dashboard', 'icon': Icons.grid_view_rounded, 'idx': 0},
               {'label': 'Riwayat Kehadiran', 'icon': Icons.history_rounded, 'idx': 1},
-              {'label': 'Tunjangan Kinerja', 'icon': Icons.account_balance_wallet_outlined, 'idx': 2},
             ].map((item) {
               final i = item['idx'] as int;
               return Padding(
@@ -241,44 +240,6 @@ class WorkspaceSidebar extends StatelessWidget {
             ),
           ],
           const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: canvas,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.verified_user_outlined,
-                    color: teal,
-                    size: 22,
-                  ),
-                  const SizedBox(height: 10),
-                  text(
-                    'Presensi lebih terpercaya',
-                    size: 12,
-                    weight: FontWeight.w700,
-                  ),
-                  const SizedBox(height: 7),
-                  text(
-                    'Lokasi terverifikasi. Kehadiran tercatat dengan lebih baik.',
-                    size: 11,
-                    color: muted,
-                  ),
-                  const SizedBox(height: 10),
-                  text(
-                    'Sistem Presensi KPU Sulawesi Utara',
-                    size: 10,
-                    color: teal,
-                  ),
-                ],
-              ),
-            ),
-          ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(20),

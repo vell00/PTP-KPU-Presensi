@@ -3,7 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import Topbar from '@/components/Topbar';
 import { useWorkspace } from '@/lib/store';
-import { Search, Download, Building2, Home, Filter, RefreshCw } from 'lucide-react';
+import { useFeedback } from '@/components/FeedbackProvider';
+import { Search, Download, Building2, Home, Filter, RefreshCw, Calendar } from 'lucide-react';
 
 // Daftar 6 Unit Subbagian KPU Sulut
 const SUBBAGIAN_LIST = [
@@ -27,27 +28,54 @@ const QUICK_FILTERS = [
   { id: 'ketua', label: 'Ketua KPU Sulut', match: ['Ketua KPU'] },
 ];
 
+const STATUS_TABS = [
+  { id: 'Semua', label: 'Semua' },
+  { id: 'Tepat Waktu', label: 'Tepat Waktu' },
+  { id: 'Terlambat', label: 'Terlambat' },
+  { id: 'Belum Absen Pulang', label: 'Belum Absen Pulang' },
+  { id: 'Belum Absen', label: 'Belum / Tidak Absen' },
+] as const;
+
+interface UnifiedRow {
+  key: string;
+  name: string;
+  nip: string;
+  division: string;
+  mode: string;
+  entered: string | null;
+  exited: string | null;
+  tanggalLabel: string;
+  masukLabel: string;
+  pulangLabel: string;
+  status: 'Tepat Waktu' | 'Terlambat' | 'Tidak Absen Pulang' | 'Belum Absen Pulang' | 'Belum / Tidak Absen';
+  sortTime: number;
+}
+
 export default function RekapPage() {
   const { data } = useWorkspace();
+  const { showToast } = useFeedback();
   const [searchName, setSearchName] = useState('');
   const [selectedSubbagian, setSelectedSubbagian] = useState('Semua');
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState('Semua');
   const [selectedMode, setSelectedMode] = useState('Semua');
+  const [datePreset, setDatePreset] = useState<'all' | 'today' | '7d' | '30d' | 'custom'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const handleQuickFilterClick = (filterId: string) => {
     if (activeQuickFilter === filterId) {
-      setActiveQuickFilter(null); // toggle off jika ditekan kembali
+      setActiveQuickFilter(null);
     } else {
       setActiveQuickFilter(filterId);
-      setSelectedSubbagian('Semua'); // reset dropdown subbagian jika quick filter ditekan
+      setSelectedSubbagian('Semua');
     }
   };
 
   const handleSubbagianChange = (value: string) => {
     setSelectedSubbagian(value);
     if (value !== 'Semua') {
-      setActiveQuickFilter(null); // reset quick filter jika memilih dropdown subbagian
+      setActiveQuickFilter(null);
     }
   };
 
@@ -57,50 +85,238 @@ export default function RekapPage() {
     setActiveQuickFilter(null);
     setSelectedStatus('Semua');
     setSelectedMode('Semua');
+    setDatePreset('all');
+    setStartDate('');
+    setEndDate('');
+    showToast('info', 'Filter Direset', 'Semua filter pencarian dan tanggal telah dikembalikan ke awal.');
   };
 
-  const filteredRecords = useMemo(() => {
-    return data.records.filter((rec) => {
-      // 1. Filter Nama
-      if (searchName && !rec.name.toLowerCase().includes(searchName.toLowerCase())) {
+  const toLocalDateStr = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const targetCheckDate = useMemo(() => {
+    if (datePreset === 'custom' && startDate) return startDate;
+    return toLocalDateStr(new Date());
+  }, [datePreset, startDate]);
+
+  const unifiedRows = useMemo(() => {
+    const now = new Date();
+    const todayStr = toLocalDateStr(now);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 6);
+    const sevenDaysStr = toLocalDateStr(sevenDaysAgo);
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 29);
+    const thirtyDaysStr = toLocalDateStr(thirtyDaysAgo);
+
+    const matchesCommon = (name: string, division: string) => {
+      if (searchName && !name.toLowerCase().includes(searchName.toLowerCase())) {
         return false;
       }
-
-      // 2. Filter Quick Role Button
       if (activeQuickFilter) {
         const filterItem = QUICK_FILTERS.find((f) => f.id === activeQuickFilter);
         if (filterItem) {
           const match = filterItem.match.some((kw) =>
-            rec.division.toLowerCase().includes(kw.toLowerCase())
+            division.toLowerCase().includes(kw.toLowerCase())
           );
           if (!match) return false;
         }
       }
-
-      // 3. Filter Dropdown Subbagian
       if (selectedSubbagian !== 'Semua') {
-        const matchSubbagian = rec.division.toLowerCase().includes(selectedSubbagian.toLowerCase());
-        if (!matchSubbagian) return false;
+        if (!division.toLowerCase().includes(selectedSubbagian.toLowerCase())) {
+          return false;
+        }
       }
-
-      // 4. Filter Mode WFO / WFH
-      if (selectedMode !== 'Semua' && rec.mode !== selectedMode) {
-        return false;
-      }
-
-      // 5. Filter Status Kehadiran
-      const enterDate = new Date(rec.entered);
-      const isLate =
-        enterDate.getHours() > 8 ||
-        (enterDate.getHours() === 8 && enterDate.getMinutes() > 0);
-      const status = isLate ? 'Terlambat' : 'Tepat Waktu';
-      if (selectedStatus !== 'Semua' && status !== selectedStatus) {
-        return false;
-      }
-
       return true;
-    });
-  }, [data.records, searchName, selectedSubbagian, activeQuickFilter, selectedStatus, selectedMode]);
+    };
+
+    const rows: UnifiedRow[] = [];
+
+    // 1. Data pegawai yang sudah melakukan presensi
+    if (selectedStatus !== 'Belum Absen') {
+      data.records.forEach((rec, idx) => {
+        const enterDate = new Date(rec.entered);
+        const recDateStr = toLocalDateStr(enterDate);
+
+        if (datePreset === 'today' && recDateStr !== todayStr) return;
+        if (datePreset === '7d' && (recDateStr < sevenDaysStr || recDateStr > todayStr)) return;
+        if (datePreset === '30d' && (recDateStr < thirtyDaysStr || recDateStr > todayStr)) return;
+        if (datePreset === 'custom') {
+          if (startDate && recDateStr < startDate) return;
+          if (endDate && recDateStr > endDate) return;
+        }
+
+        if (!matchesCommon(rec.name, rec.division)) return;
+        if (selectedMode !== 'Semua' && rec.mode !== selectedMode) return;
+
+        const isLate =
+          enterDate.getHours() > 8 ||
+          (enterDate.getHours() === 8 && enterDate.getMinutes() > 0);
+        const isPastMissedCheckOut = !rec.exited && recDateStr < todayStr;
+        const isTodayNotCheckedOut = !rec.exited && recDateStr === todayStr;
+
+        let displayStatus: UnifiedRow['status'];
+        if (isPastMissedCheckOut) {
+          displayStatus = 'Tidak Absen Pulang';
+        } else if (isTodayNotCheckedOut && selectedStatus === 'Belum Absen Pulang') {
+          displayStatus = 'Belum Absen Pulang';
+        } else {
+          displayStatus = isLate ? 'Terlambat' : 'Tepat Waktu';
+        }
+
+        if (selectedStatus === 'Tepat Waktu' && (isLate || isPastMissedCheckOut)) return;
+        if (selectedStatus === 'Terlambat' && (!isLate || isPastMissedCheckOut)) return;
+        if (selectedStatus === 'Belum Absen Pulang' && rec.exited) return;
+
+        rows.push({
+          key: `rec-${rec.nip || rec.name}-${rec.entered}-${idx}`,
+          name: rec.name,
+          nip: rec.nip || '-',
+          division: rec.division,
+          mode: rec.mode,
+          entered: rec.entered,
+          exited: rec.exited || null,
+          tanggalLabel: enterDate.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          masukLabel: `${enterDate.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })} WITA`,
+          pulangLabel: rec.exited
+            ? `${new Date(rec.exited).toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })} WITA`
+            : isPastMissedCheckOut
+            ? 'Tidak absen keluar'
+            : 'Belum absen pulang',
+          status: displayStatus,
+          sortTime: enterDate.getTime(),
+        });
+      });
+
+      rows.sort((a, b) => b.sortTime - a.sortTime);
+    }
+
+    // 2. Data pegawai yang belum / tidak absen pada targetCheckDate
+    if (selectedStatus === 'Semua' || selectedStatus === 'Belum Absen') {
+      if (selectedMode === 'Semua') {
+        const presentNips = new Set<string>();
+        const presentNames = new Set<string>();
+        data.records.forEach((rec) => {
+          if (toLocalDateStr(new Date(rec.entered)) === targetCheckDate) {
+            if (rec.nip) presentNips.add(rec.nip.trim());
+            if (rec.name) presentNames.add(rec.name.trim().toLowerCase());
+          }
+        });
+
+        const formattedTargetDate = new Date(`${targetCheckDate}T00:00:00`).toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+
+        data.employees.forEach((emp) => {
+          const isPresent =
+            (emp.nip && presentNips.has(emp.nip.trim())) ||
+            (emp.name && presentNames.has(emp.name.trim().toLowerCase()));
+          if (isPresent) return;
+
+          const unitStr = emp.subdepartmentId || emp.departmentId || '-';
+          if (!matchesCommon(emp.name, unitStr)) return;
+
+          rows.push({
+            key: `abs-${emp.id}`,
+            name: emp.name,
+            nip: emp.nip || '-',
+            division: unitStr,
+            mode: '-',
+            entered: null,
+            exited: null,
+            tanggalLabel: formattedTargetDate,
+            masukLabel: '—',
+            pulangLabel: '—',
+            status: 'Belum / Tidak Absen',
+            sortTime: 0,
+          });
+        });
+      }
+    }
+
+    return rows;
+  }, [
+    data.records,
+    data.employees,
+    searchName,
+    selectedSubbagian,
+    activeQuickFilter,
+    selectedStatus,
+    selectedMode,
+    datePreset,
+    startDate,
+    endDate,
+    targetCheckDate,
+  ]);
+
+  const handleDownloadReport = () => {
+    if (unifiedRows.length === 0) {
+      showToast('warning', 'Tidak Ada Data', 'Tidak ada data presensi yang dapat diunduh sesuai filter saat ini.');
+      return;
+    }
+
+    const escapeCsv = (val: string) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+    const headers = [
+      'No',
+      'Nama Lengkap',
+      'NIP',
+      'Unit / Jabatan',
+      'Metode',
+      'Tanggal',
+      'Waktu Masuk (WITA)',
+      'Waktu Pulang (WITA)',
+      'Status',
+    ];
+
+    const csvRows = unifiedRows.map((row, idx) =>
+      [
+        String(idx + 1),
+        row.name,
+        row.nip,
+        row.division,
+        row.mode,
+        row.tanggalLabel,
+        row.masukLabel,
+        row.pulangLabel,
+        row.status,
+      ]
+        .map(escapeCsv)
+        .join(',')
+    );
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...csvRows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const todayStr = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.setAttribute('download', `rekap-presensi-kpu-sulut-${todayStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(
+      'success',
+      'Laporan Berhasil Diunduh',
+      `File rekap-presensi-kpu-sulut-${todayStr}.csv (${unifiedRows.length} baris) telah diunduh.`
+    );
+  };
 
   return (
     <>
@@ -123,23 +339,19 @@ export default function RekapPage() {
 
             {/* Dropdown Filters & Download */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Dropdown Semua Unit Subbagian */}
-              <div className="flex items-center gap-1.5">
-                <select
-                  value={selectedSubbagian}
-                  onChange={(e) => handleSubbagianChange(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-[#07142F] focus:outline-none focus:ring-2 focus:ring-[#D52832]"
-                >
-                  <option value="Semua">Semua Unit Subbagian</option>
-                  {SUBBAGIAN_LIST.map((sub) => (
-                    <option key={sub} value={sub}>
-                      Subbagian {sub}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                value={selectedSubbagian}
+                onChange={(e) => handleSubbagianChange(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-[#07142F] focus:outline-none focus:ring-2 focus:ring-[#D52832]"
+              >
+                <option value="Semua">Semua Unit Subbagian</option>
+                {SUBBAGIAN_LIST.map((sub) => (
+                  <option key={sub} value={sub}>
+                    Subbagian {sub}
+                  </option>
+                ))}
+              </select>
 
-              {/* Mode WFO/WFH */}
               <select
                 value={selectedMode}
                 onChange={(e) => setSelectedMode(e.target.value)}
@@ -150,27 +362,72 @@ export default function RekapPage() {
                 <option value="WFH">WFH (Rumah)</option>
               </select>
 
-              {/* Status Tepat Waktu/Terlambat */}
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-[#07142F] focus:outline-none focus:ring-2 focus:ring-[#D52832]"
-              >
-                <option value="Semua">Semua Status</option>
-                <option value="Tepat Waktu">Tepat Waktu</option>
-                <option value="Terlambat">Terlambat</option>
-              </select>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-[#D52832] hidden sm:block" />
+                <select
+                  value={datePreset}
+                  onChange={(e) => setDatePreset(e.target.value as 'all' | 'today' | '7d' | '30d' | 'custom')}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm font-semibold text-[#07142F] focus:outline-none focus:ring-2 focus:ring-[#D52832]"
+                >
+                  <option value="all">Semua Riwayat Tanggal</option>
+                  <option value="today">Hari Ini</option>
+                  <option value="7d">7 Hari Terakhir</option>
+                  <option value="30d">30 Hari Terakhir</option>
+                  <option value="custom">Pilih Tanggal...</option>
+                </select>
+              </div>
 
-              {/* Unduh Laporan */}
               <button
-                onClick={() => {
-                  alert('Laporan rekap kehadiran siap diunduh / dicetak.');
-                }}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#D52832] hover:bg-[#B91C1C] text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm"
+                onClick={handleDownloadReport}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#D52832] hover:bg-[#B91C1C] text-white rounded-lg text-xs sm:text-sm font-semibold transition-colors shadow-sm cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span className="hidden sm:inline">Unduh Laporan</span>
               </button>
+            </div>
+          </div>
+
+          {/* Custom Date Range Picker */}
+          {datePreset === 'custom' && (
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-3 text-xs">
+              <span className="font-bold text-slate-600">Rentang Tanggal:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-[#07142F] focus:outline-none focus:ring-2 focus:ring-[#D52832]"
+              />
+              <span className="text-slate-400 font-semibold">s.d.</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-[#07142F] focus:outline-none focus:ring-2 focus:ring-[#D52832]"
+              />
+            </div>
+          )}
+
+          {/* Filter Status Kehadiran (Tabs 1 Klik) */}
+          <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <span className="text-xs font-bold text-slate-500 shrink-0">Status Kehadiran:</span>
+            <div className="flex items-center gap-1.5 flex-wrap flex-1">
+              {STATUS_TABS.map((tab) => {
+                const isActive = selectedStatus === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setSelectedStatus(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#07142F] text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200/70 text-slate-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -189,7 +446,7 @@ export default function RekapPage() {
                     key={qf.id}
                     type="button"
                     onClick={() => handleQuickFilterClick(qf.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-2xs ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
                       isActive
                         ? 'bg-[#D52832] text-white border border-[#D52832]'
                         : 'bg-white hover:bg-slate-50 text-[#07142F] border border-slate-200'
@@ -204,11 +461,12 @@ export default function RekapPage() {
                 selectedSubbagian !== 'Semua' ||
                 selectedMode !== 'Semua' ||
                 selectedStatus !== 'Semua' ||
+                datePreset !== 'all' ||
                 searchName !== '') && (
                 <button
                   type="button"
                   onClick={resetAllFilters}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-[#D52832] bg-slate-100 hover:bg-slate-200 transition-colors ml-auto"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-[#D52832] bg-slate-100 hover:bg-slate-200 transition-colors ml-auto cursor-pointer"
                 >
                   <RefreshCw className="w-3 h-3" />
                   <span>Reset Filter</span>
@@ -218,16 +476,21 @@ export default function RekapPage() {
           </div>
         </div>
 
-        {/* Tabel Data Rekap */}
+        {/* 1 Tabel Terpadu Data Rekap Kehadiran */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
             <span>
-              Menampilkan <strong className="text-slate-800">{filteredRecords.length}</strong> data presensi
+              Menampilkan <strong className="text-slate-800">{unifiedRows.length}</strong> data pegawai &amp; presensi
             </span>
+            {(selectedStatus === 'Semua' || selectedStatus === 'Belum Absen') && (
+              <span className="text-[11px] text-slate-400">
+                Pengecekan pegawai belum absen untuk tanggal: <strong className="text-slate-600">{targetCheckDate}</strong>
+              </span>
+            )}
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[600px]">
+            <table className="w-full text-left text-sm min-w-[700px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3.5">Nama Lengkap</th>
@@ -239,73 +502,60 @@ export default function RekapPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredRecords.map((rec, idx) => {
-                  const enterDate = new Date(rec.entered);
-                  const isLate =
-                    enterDate.getHours() > 8 ||
-                    (enterDate.getHours() === 8 && enterDate.getMinutes() > 0);
+                {unifiedRows.map((row) => {
+                  const statusBadgeClass =
+                    row.status === 'Tepat Waktu'
+                      ? 'bg-white text-[#07142F] border border-[#07142F]'
+                      : row.status === 'Belum Absen Pulang' || row.status === 'Tidak Absen Pulang'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-rose-50 text-[#D52832] border border-rose-200';
+
                   return (
-                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-slate-900">{rec.name}</td>
-                      <td className="px-6 py-4 text-xs text-slate-600">{rec.division}</td>
+                    <tr key={row.key} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
-                            rec.mode === 'WFO'
-                              ? 'bg-rose-50 text-[#D52832] border border-rose-200'
-                              : 'bg-slate-100 text-[#07142F] border border-slate-300'
-                          }`}
-                        >
-                          {rec.mode === 'WFO' ? (
-                            <Building2 className="w-3.5 h-3.5" />
-                          ) : (
-                            <Home className="w-3.5 h-3.5" />
-                          )}
-                          {rec.mode}
-                        </span>
+                        <div className="font-semibold text-slate-900">{row.name}</div>
+                        <div className="text-[11px] font-mono text-slate-400">{row.nip}</div>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-600">{row.division}</td>
+                      <td className="px-6 py-4">
+                        {row.mode === '-' ? (
+                          <span className="text-xs text-slate-400">—</span>
+                        ) : (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
+                              row.mode === 'WFO'
+                                ? 'bg-rose-50 text-[#D52832] border border-rose-200'
+                                : 'bg-slate-100 text-[#07142F] border border-slate-300'
+                            }`}
+                          >
+                            {row.mode === 'WFO' ? (
+                              <Building2 className="w-3.5 h-3.5" />
+                            ) : (
+                              <Home className="w-3.5 h-3.5" />
+                            )}
+                            {row.mode}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-xs">
-                        <div className="font-medium text-slate-900">
-                          {enterDate.toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}{' '}
-                          WITA
-                        </div>
-                        <div className="text-[11px] text-slate-400">
-                          {enterDate.toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </div>
+                        <div className="font-medium text-slate-900">{row.masukLabel}</div>
+                        <div className="text-[11px] text-slate-400">{row.tanggalLabel}</div>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-500">
-                        {rec.exited
-                          ? new Date(rec.exited).toLocaleTimeString('id-ID', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '—'}
-                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-500">{row.pulangLabel}</td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            isLate
-                              ? 'bg-rose-50 text-[#D52832] border border-rose-200'
-                              : 'bg-white text-[#07142F] border border-[#07142F]'
-                          }`}
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${statusBadgeClass}`}
                         >
-                          {isLate ? 'Terlambat' : 'Tepat Waktu'}
+                          {row.status}
                         </span>
                       </td>
                     </tr>
                   );
                 })}
-                {filteredRecords.length === 0 && (
+                {unifiedRows.length === 0 && (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-400">
-                      Tidak ada data presensi yang ditemukan.
+                      Tidak ada data pegawai atau presensi yang ditemukan pada filter ini.
                     </td>
                   </tr>
                 )}

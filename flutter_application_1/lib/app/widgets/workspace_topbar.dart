@@ -43,11 +43,10 @@ class WorkspaceTopbar extends StatelessWidget {
           child: text(
             admin
                 ? (page >= 0 && page < adminTitles.length ? adminTitles[page] : 'Admin')
-                : (page >= 0 && page < 3
+                : (page >= 0 && page < 2
                     ? [
                         'Dashboard',
                         'Riwayat Kehadiran',
-                        'Tunjangan Kinerja',
                       ][page]
                     : 'Aplikasi Presensi'),
             size: 12,

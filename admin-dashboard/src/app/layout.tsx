@@ -6,6 +6,7 @@ import { AuthProvider, useAdminAuth } from '@/lib/auth';
 import { WorkspaceProvider } from '@/lib/store';
 import Sidebar from '@/components/Sidebar';
 import AdminLoginPage from '@/components/AdminLoginPage';
+import { FeedbackProvider } from '@/components/FeedbackProvider';
 
 function AdminGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAdminAuth();
@@ -70,11 +71,13 @@ export default function RootLayout({
         <title>Sistem Presensi KPU Sulawesi Utara • Portal Administrator</title>
       </head>
       <body className="min-h-screen bg-[#040C1D] antialiased" suppressHydrationWarning>
-        <AuthProvider>
-          <AdminGate>
-            {children}
-          </AdminGate>
-        </AuthProvider>
+        <FeedbackProvider>
+          <AuthProvider>
+            <AdminGate>
+              {children}
+            </AdminGate>
+          </AuthProvider>
+        </FeedbackProvider>
       </body>
     </html>
   );

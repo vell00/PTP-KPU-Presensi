@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import Topbar from '@/components/Topbar';
 import { useWorkspace } from '@/lib/store';
+import { useFeedback } from '@/components/FeedbackProvider';
 import { Check, X, Calendar } from 'lucide-react';
 
 export default function IzinPage() {
   const { data, updateRequestStatus } = useWorkspace();
+  const { showToast, confirmAction } = useFeedback();
   const [filterStatus, setFilterStatus] = useState<string>('Semua');
 
   const filteredRequests = data.requests
@@ -16,10 +18,21 @@ export default function IzinPage() {
       return true;
     });
 
-  const handleAction = (index: number, name: string, status: 'Disetujui' | 'Ditolak') => {
+  const handleAction = async (index: number, name: string, status: 'Disetujui' | 'Ditolak') => {
     const actionText = status === 'Disetujui' ? 'menyetujui' : 'menolak';
-    if (confirm(`Apakah Anda yakin ingin ${actionText} pengajuan dari ${name}?`)) {
-      updateRequestStatus(index, status);
+    const confirmed = await confirmAction({
+      title: status === 'Disetujui' ? 'Setujui Pengajuan Izin/Cuti?' : 'Tolak Pengajuan Izin/Cuti?',
+      message: `Apakah Anda yakin ingin ${actionText} permohonan dari ${name}?`,
+      confirmLabel: status === 'Disetujui' ? 'Ya, Setujui' : 'Ya, Tolak',
+      variant: status === 'Ditolak' ? 'danger' : 'primary',
+    });
+    if (confirmed) {
+      await updateRequestStatus(index, status);
+      showToast(
+        status === 'Disetujui' ? 'success' : 'warning',
+        `Pengajuan ${status}`,
+        `Permohonan izin/cuti atas nama ${name} telah ${status.toLowerCase()}.`
+      );
     }
   };
 

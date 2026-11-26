@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Topbar from '@/components/Topbar';
 import { useWorkspace } from '@/lib/store';
+import { useFeedback } from '@/components/FeedbackProvider';
 import { ALL_SUBDEPARTMENTS, WFH_DAYS } from '@/lib/constants';
 import { WfhSchedule } from '@/types';
 import { MapPin, Calendar, Save, AlertTriangle, CheckCircle2, Crosshair, Building2 } from 'lucide-react';
@@ -19,6 +20,7 @@ const LocationPicker = dynamic(() => import('@/components/LocationPicker'), {
 
 export default function PengaturanPage() {
   const { data, updateSettings } = useWorkspace();
+  const { showToast } = useFeedback();
 
   const [latitude, setLatitude] = useState(data.latitude?.toString() ?? '1.4748');
   const [longitude, setLongitude] = useState(data.longitude?.toString() ?? '124.8421');
@@ -71,6 +73,7 @@ export default function PengaturanPage() {
       updated[s.id] = ['Selasa', 'Jumat'];
     });
     setWfhSchedule(updated);
+    showToast('info', 'Jadwal WFH Diatur', 'Seluruh subbagian disetel WFH pada hari Selasa & Jumat. Klik Simpan untuk menerapkan.');
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -84,10 +87,12 @@ export default function PengaturanPage() {
 
     if (isNaN(latNum) || isNaN(lngNum)) {
       setErrorMsg('Latitude dan Longitude harus berupa angka desimal yang valid.');
+      showToast('error', 'Input Tidak Valid', 'Latitude dan Longitude harus berupa angka desimal yang valid.');
       return;
     }
     if (isNaN(radNum) || radNum <= 0) {
       setErrorMsg('Radius kantor harus lebih besar dari 0 meter.');
+      showToast('error', 'Input Tidak Valid', 'Radius kantor harus lebih besar dari 0 meter.');
       return;
     }
 
@@ -99,6 +104,7 @@ export default function PengaturanPage() {
     });
 
     setSavedSuccess(true);
+    showToast('success', 'Pengaturan Disimpan', 'Lokasi kantor dan jadwal WFH berhasil disimpan ke database.');
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 

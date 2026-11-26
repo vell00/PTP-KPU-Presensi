@@ -62,9 +62,6 @@ class _WorkspaceState extends State<Workspace> {
 
   Widget currentPage() {
     if (!admin) {
-      if (page == 2) {
-        return AllowancePage(store: store);
-      }
       return EmployeeAttendancePage(
         store: store,
         page: page,
