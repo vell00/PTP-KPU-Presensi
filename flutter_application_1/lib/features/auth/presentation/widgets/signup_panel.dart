@@ -173,7 +173,7 @@ class _SignUpPanelState extends State<SignUpPanel> {
                       const SizedBox(height: 12),
 
                       const Text(
-                        'PTP-KPU SULAWESI UTARA',
+                        'SISTEM PRESENSI KPU SULAWESI UTARA',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Color(0xFFCBD5E1),

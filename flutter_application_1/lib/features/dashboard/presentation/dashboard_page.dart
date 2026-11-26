@@ -31,7 +31,7 @@ class _DashboardPageState extends State<DashboardPage> {
     children: [
       heading(
         'Dashboard',
-        'Selamat datang kembali, Admin 👋  Berikut ringkasan kehadiran hari ini.',
+        'Selamat datang kembali, Admin. Berikut ringkasan kehadiran hari ini.',
         action: dateButton,
       ),
       Container(

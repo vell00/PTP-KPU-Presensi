@@ -179,7 +179,7 @@ class _LoginPanelState extends State<LoginPanel> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'PTP-KPU Presensi Pegawai',
+                        'Sistem Presensi KPU Sulawesi Utara',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Color(0xFF93A7C7),
@@ -257,7 +257,7 @@ class _LoginPanelState extends State<LoginPanel> {
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
-                                  'Silakan masuk ke akun PTP-KPU Anda.',
+                                  'Silakan masuk ke akun Sistem Presensi KPU Sulawesi Utara Anda.',
                                   style: TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 12,

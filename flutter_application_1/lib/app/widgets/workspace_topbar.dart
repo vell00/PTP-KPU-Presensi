@@ -56,11 +56,6 @@ class WorkspaceTopbar extends StatelessWidget {
         ),
         if (isRemote) ...[
           IconButton(
-            tooltip: 'Muat ulang dari server',
-            onPressed: onRefresh,
-            icon: const Icon(Icons.sync, size: 20),
-          ),
-          IconButton(
             tooltip: 'Keluar akun',
             onPressed: onLogout,
             icon: const Icon(Icons.logout, size: 20),

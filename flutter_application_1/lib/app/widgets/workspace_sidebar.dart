@@ -36,14 +36,14 @@ class WorkspaceSidebar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 text(
-                  'PTP-KPU-Presensi',
+                  'Sistem Presensi',
                   size: 18,
                   weight: FontWeight.w800,
                   color: navy,
                 ),
                 const SizedBox(height: 3),
                 text(
-                  'Sulawesi Utara',
+                  'KPU Sulawesi Utara',
                   size: 11,
                   color: muted,
                   weight: FontWeight.w700,

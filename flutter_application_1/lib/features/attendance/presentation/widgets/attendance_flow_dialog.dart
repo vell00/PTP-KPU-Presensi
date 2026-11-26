@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import '../../../../core/data/app_store.dart';
 import '../../../../core/utils/date_time.dart';
 import '../../services/device_attendance_service.dart';
@@ -151,6 +152,46 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
       _pinError = null;
     });
 
+    final isAndroidNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    if (isAndroidNative) {
+      try {
+        final auth = LocalAuthentication();
+        final canCheck = await auth.canCheckBiometrics || await auth.isDeviceSupported();
+        if (!canCheck) {
+          if (!mounted) return;
+          setState(() {
+            _stage = _FlowStage.authentication;
+            _pinError = 'Perangkat ini tidak mendukung biometrik. Silakan gunakan PIN.';
+          });
+          return;
+        }
+        final didAuthenticate = await auth.authenticate(
+          localizedReason: 'Verifikasi sidik jari untuk mencatat presensi KPU Sulut',
+          options: const AuthenticationOptions(
+            biometricOnly: true,
+            stickyAuth: true,
+          ),
+        );
+        if (!mounted) return;
+        if (didAuthenticate) {
+          _onAuthSuccess();
+        } else {
+          setState(() {
+            _stage = _FlowStage.authentication;
+            _pinError = 'Autentikasi sidik jari dibatalkan. Silakan coba lagi atau gunakan PIN.';
+          });
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _stage = _FlowStage.authentication;
+          _pinError = 'Gagal membaca sidik jari. Silakan gunakan PIN Presensi.';
+        });
+      }
+      return;
+    }
+
+    // Fallback simulasi jika diaktifkan manual pada mode web/desktop
     await Future.delayed(const Duration(milliseconds: 1300));
     if (!mounted) return;
 

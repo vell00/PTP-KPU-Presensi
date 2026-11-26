@@ -100,7 +100,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
         heading(
           widget.page == 1
               ? 'Riwayat Kehadiran'
-              : 'Halo, ${store.currentUser?.name ?? 'Pegawai'} 👋',
+              : 'Halo, ${store.currentUser?.name ?? 'Pegawai'}',
           '${store.currentUser?.unitName ?? 'KPU'} • KPU Sulawesi Utara',
         ),
         if (widget.page == 1) ...[
