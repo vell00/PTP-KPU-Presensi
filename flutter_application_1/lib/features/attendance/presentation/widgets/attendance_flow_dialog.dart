@@ -1,35 +1,45 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../../core/data/app_store.dart';
-import '../../../../core/utils/date_time.dart';
+import '../../../../core/theme/colors.dart';
 import '../../services/device_attendance_service.dart';
 
 enum _FlowStage {
   detectingLocation,
   locationFailed,
-  locationVerified,
+  selfieCapture,
   authentication,
-  authenticatingFingerprint,
-  success,
+  authenticatingBiometric,
 }
 
 class AttendanceFlowResult {
   final bool verified;
-  final DateTime timestamp;
+  final String authMethod; // 'biometric' | 'pin'
+  final String? pin;
   final double? latitude;
   final double? longitude;
+  final double? accuracyMeters;
+  final bool isMocked;
   final double distance;
   final double radius;
+  final String? selfiePath;
 
-  AttendanceFlowResult({
+  const AttendanceFlowResult({
     required this.verified,
-    required this.timestamp,
+    required this.authMethod,
+    this.pin,
     this.latitude,
     this.longitude,
+    this.accuracyMeters,
+    this.isMocked = false,
     required this.distance,
     required this.radius,
+    this.selfiePath,
   });
 }
 
@@ -37,335 +47,301 @@ class AttendanceFlowDialog extends StatefulWidget {
   final AppStore store;
   final bool isCheckOut;
   final bool isWfh;
-  final String? expectedPin;
 
   const AttendanceFlowDialog({
     super.key,
     required this.store,
     required this.isCheckOut,
     required this.isWfh,
-    this.expectedPin,
   });
 
   @override
   State<AttendanceFlowDialog> createState() => _AttendanceFlowDialogState();
 }
 
-class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
-    with SingleTickerProviderStateMixin {
+class _AttendanceFlowDialogState extends State<AttendanceFlowDialog> {
   _FlowStage _stage = _FlowStage.detectingLocation;
   GeolocationVerificationResult? _geoResult;
   final TextEditingController _pinController = TextEditingController();
-  String? _pinError;
-  bool _forceShowFingerprint = false;
+  final ImagePicker _picker = ImagePicker();
 
-  late AnimationController _animController;
-  late Animation<double> _pulseAnimation;
+  XFile? _selfieFile;
+  bool _biometricSupported = false;
+  String? _errorMsg;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
-
-    _pulseAnimation = Tween<double>(begin: 0.92, end: 1.08).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
-    );
-
-    // Otomatis mulai deteksi geolocation saat dialog muncul
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startLocationDetection();
-    });
+    _checkBiometricSupport();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startLocationDetection());
   }
 
   @override
   void dispose() {
-    _animController.dispose();
     _pinController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkBiometricSupport() async {
+    if (kIsWeb) return;
+    final isMobile = defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    if (!isMobile) return;
+    try {
+      final auth = LocalAuthentication();
+      final supported = await auth.canCheckBiometrics && await auth.isDeviceSupported();
+      if (mounted) setState(() => _biometricSupported = supported);
+    } catch (_) {}
   }
 
   Future<void> _startLocationDetection() async {
     setState(() {
       _stage = _FlowStage.detectingLocation;
       _geoResult = null;
-      _pinError = null;
+      _errorMsg = null;
     });
 
-    // Tambahkan sedikit jeda animasi agar user melihat feedback sistem aktif mendeteksi
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-
-    final service = DeviceAttendanceService();
-    final result = await service.verifyLocation(
+    final result = await DeviceAttendanceService().verifyLocation(
       widget.store,
       wfh: widget.isWfh,
     );
-
     if (!mounted) return;
 
     setState(() {
       _geoResult = result;
-      if (result.verified) {
-        _stage = _FlowStage.locationVerified;
-      } else {
-        _stage = _FlowStage.locationFailed;
-      }
+      _stage = result.verified
+          ? _FlowStage.selfieCapture
+          : _FlowStage.locationFailed;
     });
+  }
 
-    // Jika lokasi berhasil terverifikasi, lanjutkan ke tahap Autentikasi
-    if (result.verified) {
-      await Future.delayed(const Duration(milliseconds: 850));
+  Future<void> _captureSelfie() async {
+    setState(() => _errorMsg = null);
+    try {
+      final photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 70,
+        maxWidth: 960,
+      );
+      if (!mounted) return;
+      if (photo != null) {
+        setState(() => _selfieFile = photo);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMsg =
+            'Kamera tidak tersedia pada perangkat ini (${e.toString().replaceFirst('Exception: ', '')}).';
+      });
+    }
+  }
+
+  void _proceedToAuth() {
+    final isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+    if (isMobile && _selfieFile == null) {
+      setState(() => _errorMsg = 'Ambil foto selfie terlebih dahulu sebagai bukti kehadiran.');
+      return;
+    }
+    setState(() {
+      _errorMsg = null;
+      _stage = _FlowStage.authentication;
+    });
+  }
+
+  Future<void> _authenticateBiometric() async {
+    setState(() {
+      _stage = _FlowStage.authenticatingBiometric;
+      _errorMsg = null;
+    });
+    try {
+      final auth = LocalAuthentication();
+      final didAuth = await auth.authenticate(
+        localizedReason:
+            'Verifikasi biometrik untuk mencatat ${widget.isCheckOut ? 'presensi keluar' : 'presensi masuk'} KPU Sulut',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+      if (!mounted) return;
+      if (didAuth) {
+        _finish(authMethod: 'biometric');
+      } else {
+        setState(() {
+          _stage = _FlowStage.authentication;
+          _errorMsg = 'Autentikasi biometrik dibatalkan. Silakan coba lagi atau gunakan PIN.';
+        });
+      }
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _stage = _FlowStage.authentication;
+        _errorMsg = 'Biometrik tidak tersedia. Gunakan PIN 6 digit Anda.';
       });
     }
   }
 
-  void _verifyPin() {
+  void _submitPin() {
     final entered = _pinController.text.trim();
-    if (entered.isEmpty) {
-      setState(() => _pinError = 'Masukkan 6 digit PIN presensi Anda');
+    if (!RegExp(r'^\d{6}$').hasMatch(entered)) {
+      setState(() => _errorMsg = 'Masukkan 6 digit angka PIN presensi Anda.');
       return;
     }
-
-    final targetPin = widget.expectedPin?.trim();
-    // PIN yang valid: PIN yang telah dibuat pegawai di Firestore, atau default 123456 jika belum disetel
-    final isValid = (targetPin != null && targetPin.isNotEmpty && entered == targetPin) ||
-        (targetPin == null && entered == '123456');
-
-    if (isValid) {
-      _onAuthSuccess();
-    } else {
-      setState(() {
-        _pinError = 'PIN salah. Silakan coba lagi.';
-      });
-    }
+    _finish(authMethod: 'pin', pin: entered);
   }
 
-  Future<void> _simulateFingerprint() async {
-    setState(() {
-      _stage = _FlowStage.authenticatingFingerprint;
-      _pinError = null;
-    });
-
-    final isAndroidNative = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    if (isAndroidNative) {
-      try {
-        final auth = LocalAuthentication();
-        final canCheck = await auth.canCheckBiometrics || await auth.isDeviceSupported();
-        if (!canCheck) {
-          if (!mounted) return;
-          setState(() {
-            _stage = _FlowStage.authentication;
-            _pinError = 'Perangkat ini tidak mendukung biometrik. Silakan gunakan PIN.';
-          });
-          return;
-        }
-        final didAuthenticate = await auth.authenticate(
-          localizedReason: 'Verifikasi sidik jari untuk mencatat presensi KPU Sulut',
-          options: const AuthenticationOptions(
-            biometricOnly: true,
-            stickyAuth: true,
-          ),
-        );
-        if (!mounted) return;
-        if (didAuthenticate) {
-          _onAuthSuccess();
-        } else {
-          setState(() {
-            _stage = _FlowStage.authentication;
-            _pinError = 'Autentikasi sidik jari dibatalkan. Silakan coba lagi atau gunakan PIN.';
-          });
-        }
-      } catch (e) {
-        if (!mounted) return;
-        setState(() {
-          _stage = _FlowStage.authentication;
-          _pinError = 'Gagal membaca sidik jari. Silakan gunakan PIN Presensi.';
-        });
-      }
-      return;
-    }
-
-    // Fallback simulasi jika diaktifkan manual pada mode web/desktop
-    await Future.delayed(const Duration(milliseconds: 1300));
-    if (!mounted) return;
-
-    _onAuthSuccess();
-  }
-
-  void _onAuthSuccess() async {
-    setState(() {
-      _stage = _FlowStage.success;
-    });
-
-    await Future.delayed(const Duration(milliseconds: 750));
-    if (!mounted) return;
-
-    final finalResult = AttendanceFlowResult(
-      verified: true,
-      timestamp: witaNow(),
-      latitude: _geoResult?.latitude,
-      longitude: _geoResult?.longitude,
-      distance: _geoResult?.distance ?? 0,
-      radius: _geoResult?.radius ?? widget.store.radius,
+  void _finish({required String authMethod, String? pin}) {
+    Navigator.of(context).pop(
+      AttendanceFlowResult(
+        verified: true,
+        authMethod: authMethod,
+        pin: pin,
+        latitude: _geoResult?.latitude,
+        longitude: _geoResult?.longitude,
+        accuracyMeters: _geoResult?.accuracyMeters,
+        isMocked: _geoResult?.isMocked ?? false,
+        distance: _geoResult?.distance ?? 0,
+        radius: _geoResult?.radius ?? widget.store.radius,
+        selfiePath: _selfieFile?.path,
+      ),
     );
-
-    Navigator.of(context).pop(finalResult);
   }
+
+  int get _stepNumber => switch (_stage) {
+    _FlowStage.detectingLocation || _FlowStage.locationFailed => 1,
+    _FlowStage.selfieCapture => 2,
+    _FlowStage.authentication || _FlowStage.authenticatingBiometric => 3,
+  };
 
   @override
   Widget build(BuildContext context) {
-    const teal = Color(0xFF07142F); // Navy KPU
-    const primaryNavy = Color(0xFF07142F);
-    const accentRed = Color(0xFFD52832);
-    final isAndroidDevice = defaultTargetPlatform == TargetPlatform.android;
-    final showFingerprintOption = isAndroidDevice || _forceShowFingerprint;
-
-    final titleText = widget.isCheckOut ? 'Presensi Keluar' : 'Presensi Masuk';
+    final title = widget.isCheckOut ? 'Presensi Keluar' : 'Presensi Masuk';
+    final isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      elevation: 12,
+      backgroundColor: surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 26),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(22),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // HEADER TITLE & STATUS
+              // Header
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        titleText,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: ink,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'KPU Provinsi Sulawesi Utara',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: widget.isWfh ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: widget.isWfh ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
-                      ),
-                    ),
-                    child: Text(
-                      widget.isWfh ? 'Mode WFH' : 'Mode WFO',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: widget.isWfh ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 22),
-
-              // KONTEN BERDASARKAN TAHAP
-              if (_stage == _FlowStage.detectingLocation) ...[
-                // Animasi Geofencing Sedang Mendeteksi
-                ScaleTransition(
-                  scale: _pulseAnimation,
-                  child: Container(
-                    width: 76,
-                    height: 76,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: primaryNavy.withValues(alpha: 0.2), width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryNavy.withValues(alpha: 0.15),
-                          blurRadius: 18,
-                          spreadRadius: 4,
+                        const SizedBox(height: 2),
+                        Text(
+                          'Langkah $_stepNumber dari 3 • ${widget.isWfh ? 'Mode WFH' : 'Mode WFO'}',
+                          style: const TextStyle(fontSize: 12, color: muted),
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Icon(Icons.share_location_rounded, color: primaryNavy, size: 38),
+                  ),
+                  IconButton(
+                    tooltip: 'Tutup',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded, color: muted),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // 3-Segment Step Bar
+              Row(
+                children: [1, 2, 3].map((idx) {
+                  final active = _stepNumber >= idx;
+                  return Expanded(
+                    child: Container(
+                      height: 4,
+                      margin: EdgeInsets.only(right: idx < 3 ? 6 : 0),
+                      decoration: BoxDecoration(
+                        color: active ? navy : line,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
                     ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 22),
+
+              // STEP 1: LOCATION
+              if (_stage == _FlowStage.detectingLocation) ...[
+                const Center(
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: CircularProgressIndicator(strokeWidth: 3, color: navy),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 const Text(
-                  'Mendeteksi Geofencing Kantor...',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Memeriksa titik koordinat GPS dan memverifikasi batas radius geofencing kantor KPU.',
+                  'Memverifikasi Lokasi GPS...',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: ink),
                 ),
-                const SizedBox(height: 20),
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: primaryNavy),
+                const SizedBox(height: 6),
+                Text(
+                  widget.isWfh
+                      ? 'Mode WFH aktif sesuai jadwal subbagian Anda.'
+                      : 'Memeriksa koordinat akurasi tinggi dan radius kantor KPU Sulut.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12.5, color: muted),
                 ),
               ] else if (_stage == _FlowStage.locationFailed) ...[
-                // Feedback Gagal Geofencing
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFFECACA), width: 2),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.location_off_rounded, color: Color(0xFFDC2626), size: 36),
+                Center(
+                  child: Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: dangerBg,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: dangerBorder),
+                    ),
+                    child: const Icon(Icons.location_off_rounded, color: danger, size: 28),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 const Text(
-                  'Verifikasi Geofencing Gagal',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF991B1B)),
+                  'Verifikasi Lokasi Gagal',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: danger),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF1F2),
+                    color: dangerBg,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFE4E6)),
+                    border: Border.all(color: dangerBorder),
                   ),
                   child: Text(
-                    _geoResult?.errorMessage ??
-                        'Posisi Anda tidak berada di dalam radius geofencing presensi kantor KPU.',
+                    _geoResult?.errorMessage ?? 'Posisi berada di luar radius geofencing kantor.',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF9F1239)),
+                    style: const TextStyle(fontSize: 12.5, color: danger),
                   ),
                 ),
-                if ((_geoResult?.distance ?? 0) > 0) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    'Jarak saat ini: ${_geoResult!.distance.round()} m • Batas Geofencing: ${_geoResult!.radius.round()} m',
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-                  ),
-                ],
-                const SizedBox(height: 22),
+                const SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -374,133 +350,163 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                         child: const Text('Batal'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: _startLocationDetection,
-                        style: FilledButton.styleFrom(backgroundColor: accentRed),
-                        icon: const Icon(Icons.refresh, size: 18),
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
                         label: const Text('Coba Lagi'),
                       ),
                     ),
                   ],
                 ),
-              ] else if (_stage == _FlowStage.locationVerified) ...[
-                // Feedback Geofencing Terverifikasi Sukses
+              ] else if (_stage == _FlowStage.selfieCapture) ...[
+                // Verified location banner
                 Container(
-                  width: 72,
-                  height: 72,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFA7F3D0), width: 2),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 38),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Geofencing Terverifikasi!',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF065F46)),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.isWfh
-                      ? 'Mode WFH aktif: Geofencing kantor dilewati.'
-                      : 'Berada di dalam radius geofencing kantor (${_geoResult?.distance.round() ?? 0}m / maks ${_geoResult?.radius.round() ?? 100}m)',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF047857)),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Menyiapkan autentikasi...',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                ),
-              ] else if (_stage == _FlowStage.authentication ||
-                  _stage == _FlowStage.authenticatingFingerprint) ...[
-                // TAHAP AUTENTIKASI: FINGERPRINT & PIN
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FDF4),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFBBF7D0)),
+                    color: successBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: successBorder),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 14),
-                      const SizedBox(width: 6),
-                      Text(
-                        widget.isWfh
-                            ? 'Geofencing WFH Terverifikasi'
-                            : 'Geofencing Terverifikasi (${_geoResult?.distance.round()}m)',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF15803D),
+                      const Icon(Icons.check_circle_rounded, color: success, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          widget.isWfh
+                              ? 'Mode WFH terverifikasi'
+                              : 'Dalam radius kantor (${_geoResult?.distance.round() ?? 0} m / maks ${_geoResult?.radius.round() ?? 100} m)',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: success,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 18),
+
+                // Selfie Preview / Prompt
+                Center(
+                  child: Container(
+                    width: 148,
+                    height: 148,
+                    decoration: BoxDecoration(
+                      color: surfaceMuted,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _selfieFile != null ? success : line,
+                        width: 2.5,
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _selfieFile != null && !kIsWeb
+                        ? Image.file(File(_selfieFile!.path), fit: BoxFit.cover)
+                        : Icon(
+                            _selfieFile != null
+                                ? Icons.check_circle_rounded
+                                : Icons.face_retouching_natural_rounded,
+                            size: 56,
+                            color: _selfieFile != null ? success : muted,
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _selfieFile != null ? 'Foto Selfie Siap' : 'Ambil Foto Selfie Wajah',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: ink),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Pastikan wajah terlihat jelas dengan pencahayaan cukup sebagai bukti kehadiran.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12.5, color: muted),
+                ),
+
+                if (_errorMsg != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMsg!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: danger, fontWeight: FontWeight.w600),
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _captureSelfie,
+                  icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                  label: Text(_selfieFile != null ? 'Ambil Ulang Selfie' : 'Buka Kamera Depan'),
+                ),
+                const SizedBox(height: 10),
+                FilledButton(
+                  onPressed: (_selfieFile != null || !isMobile) ? _proceedToAuth : null,
+                  child: Text(
+                    _selfieFile != null
+                        ? 'Lanjut ke Verifikasi Identitas'
+                        : isMobile
+                        ? 'Ambil Selfie untuk Melanjutkan'
+                        : 'Lanjut (Tanpa Kamera Desktop)',
+                  ),
+                ),
+              ] else ...[
+                // STEP 3: AUTHENTICATION (Real Biometric on Mobile + Server-Verified PIN)
+                const Text(
+                  'Verifikasi Identitas',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700, color: ink),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Gunakan biometrik perangkat atau masukkan 6 digit PIN presensi Anda.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12.5, color: muted),
+                ),
                 const SizedBox(height: 16),
 
-                // Pilihan Fingerprint (Khusus Pengguna Android atau saat mode simulasi aktif)
-                if (showFingerprintOption) ...[
+                if (_biometricSupported) ...[
                   InkWell(
-                    onTap: _stage == _FlowStage.authenticatingFingerprint
+                    onTap: _stage == _FlowStage.authenticatingBiometric
                         ? null
-                        : _simulateFingerprint,
-                    borderRadius: BorderRadius.circular(16),
+                        : _authenticateBiometric,
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: _stage == _FlowStage.authenticatingFingerprint
-                            ? const Color(0xFFECFDF5)
-                            : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _stage == _FlowStage.authenticatingFingerprint
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFFCBD5E1),
-                          width: _stage == _FlowStage.authenticatingFingerprint ? 2 : 1,
-                        ),
+                        color: canvas,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: line),
                       ),
                       child: Column(
                         children: [
                           Icon(
                             Icons.fingerprint_rounded,
-                            size: 48,
-                            color: _stage == _FlowStage.authenticatingFingerprint
-                                ? const Color(0xFF059669)
-                                : teal,
+                            size: 42,
+                            color: _stage == _FlowStage.authenticatingBiometric
+                                ? success
+                                : navy,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
-                            _stage == _FlowStage.authenticatingFingerprint
-                                ? 'Memindai sidik jari...'
-                                : 'Sentuh Sensor Fingerprint',
-                            style: TextStyle(
-                              fontSize: 13,
+                            _stage == _FlowStage.authenticatingBiometric
+                                ? 'Memverifikasi biometrik...'
+                                : 'Gunakan Sidik Jari / Face ID',
+                            style: const TextStyle(
+                              fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: _stage == _FlowStage.authenticatingFingerprint
-                                  ? const Color(0xFF065F46)
-                                  : const Color(0xFF1E293B),
+                              color: ink,
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Autentikasi biometrik Android',
-                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   const Row(
                     children: [
                       Expanded(child: Divider()),
@@ -508,69 +514,43 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                         padding: EdgeInsets.symmetric(horizontal: 10),
                         child: Text(
                           'atau masukkan PIN',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                          style: TextStyle(fontSize: 11.5, color: muted),
                         ),
                       ),
                       Expanded(child: Divider()),
                     ],
                   ),
                   const SizedBox(height: 14),
-                ] else ...[
-                  // Jika bukan Android (misal iPhone / Desktop), beri opsi coba sensor fingerprint
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        setState(() => _forceShowFingerprint = true);
-                      },
-                      icon: const Icon(Icons.fingerprint, size: 16, color: teal),
-                      label: const Text(
-                        'Simulasi Fingerprint (Android)',
-                        style: TextStyle(fontSize: 11, color: teal),
-                      ),
-                    ),
-                  ),
                 ],
 
-                // Form Input PIN 6-Digit
                 TextField(
                   controller: _pinController,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(6),
+                  ],
                   obscureText: true,
-                  maxLength: 6,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 22,
                     letterSpacing: 8,
                     fontWeight: FontWeight.w700,
+                    color: ink,
                   ),
-                  decoration: InputDecoration(
-                    counterText: '',
+                  decoration: const InputDecoration(
                     hintText: '••••••',
-                    hintStyle: const TextStyle(letterSpacing: 8, color: Color(0xFF94A3B8)),
-                    filled: true,
-                    fillColor: const Color(0xFFF1F5F9),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: teal, width: 2),
-                    ),
+                    labelText: 'PIN Presensi (6 Digit)',
                   ),
-                  onSubmitted: (_) => _verifyPin(),
+                  onSubmitted: (_) => _submitPin(),
                 ),
 
-                if (_pinError != null) ...[
-                  const SizedBox(height: 8),
+                if (_errorMsg != null) ...[
+                  const SizedBox(height: 10),
                   Text(
-                    _pinError!,
-                    style: const TextStyle(
-                      color: Color(0xFFDC2626),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    _errorMsg!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, color: danger, fontWeight: FontWeight.w600),
                   ),
                 ],
 
@@ -579,54 +559,21 @@ class _AttendanceFlowDialogState extends State<AttendanceFlowDialog>
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Batal'),
+                        onPressed: () => setState(() {
+                          _errorMsg = null;
+                          _stage = _FlowStage.selfieCapture;
+                        }),
+                        child: const Text('Kembali'),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: FilledButton(
-                        onPressed: _verifyPin,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: accentRed,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Verifikasi PIN'),
+                        onPressed: _submitPin,
+                        child: const Text('Kirim Presensi'),
                       ),
                     ),
                   ],
-                ),
-              ] else if (_stage == _FlowStage.success) ...[
-                // TAHAP SUKSES TEREKAM
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFECFDF5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.task_alt_rounded, color: Color(0xFF059669), size: 44),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '$titleText Berhasil!',
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF065F46),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Waktu terekam: ${clockText(witaNow())} WITA',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF047857)),
                 ),
               ],
             ],

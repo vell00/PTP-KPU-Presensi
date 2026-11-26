@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/data/app_store.dart';
 
@@ -8,20 +7,29 @@ class GeolocationVerificationResult {
   final double radius;
   final double? latitude;
   final double? longitude;
+  final double? accuracyMeters;
+  final bool isMocked;
   final String? errorMessage;
 
-  GeolocationVerificationResult({
+  const GeolocationVerificationResult({
     required this.verified,
     required this.distance,
     required this.radius,
     this.latitude,
     this.longitude,
+    this.accuracyMeters,
+    this.isMocked = false,
     this.errorMessage,
   });
 }
 
 class DeviceAttendanceService {
-  Future<GeolocationVerificationResult> verifyLocation(AppStore store, {required bool wfh}) async {
+  static const double maxAcceptableAccuracyMeters = 150.0;
+
+  Future<GeolocationVerificationResult> verifyLocation(
+    AppStore store, {
+    required bool wfh,
+  }) async {
     final targetRadius = store.radius > 0 ? store.radius : 100.0;
     if (wfh) {
       return GeolocationVerificationResult(
@@ -36,7 +44,8 @@ class DeviceAttendanceService {
         verified: false,
         distance: 0,
         radius: targetRadius,
-        errorMessage: 'Titik koordinat geofencing kantor belum diatur oleh admin.',
+        errorMessage:
+            'Titik koordinat geofencing kantor belum diatur oleh administrator.',
       );
     }
 
@@ -46,7 +55,8 @@ class DeviceAttendanceService {
           verified: false,
           distance: 0,
           radius: targetRadius,
-          errorMessage: 'Layanan lokasi (GPS) pada perangkat belum aktif.',
+          errorMessage:
+              'Layanan lokasi (GPS) pada perangkat belum aktif. Aktifkan GPS lalu coba lagi.',
         );
       }
 
@@ -56,35 +66,49 @@ class DeviceAttendanceService {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        if (!kIsWeb) {
-          return GeolocationVerificationResult(
-            verified: false,
-            distance: 0,
-            radius: targetRadius,
-            errorMessage: 'Izin lokasi diperlukan untuk verifikasi geofencing WFO.',
-          );
-        }
-      }
-
-      final p = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 15),
-        ),
-      );
-
-      if (p.isMocked) {
         return GeolocationVerificationResult(
           verified: false,
           distance: 0,
           radius: targetRadius,
-          errorMessage: 'Lokasi tiruan (Fake GPS) terdeteksi. Presensi ditolak.',
+          errorMessage:
+              'Izin akses lokasi ditolak. Izinkan lokasi di pengaturan perangkat untuk presensi WFO.',
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+
+      if (position.isMocked) {
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: 0,
+          radius: targetRadius,
+          isMocked: true,
+          errorMessage:
+              'Lokasi tiruan (Fake GPS) terdeteksi. Matikan aplikasi lokasi palsu untuk melanjutkan.',
+        );
+      }
+
+      if (position.accuracy > maxAcceptableAccuracyMeters) {
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: 0,
+          radius: targetRadius,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          accuracyMeters: position.accuracy,
+          errorMessage:
+              'Sinyal GPS kurang akurat (±${position.accuracy.round()} m). Pindah ke area terbuka lalu coba lagi.',
         );
       }
 
       final distance = Geolocator.distanceBetween(
-        p.latitude,
-        p.longitude,
+        position.latitude,
+        position.longitude,
         store.latitude!,
         store.longitude!,
       );
@@ -94,9 +118,11 @@ class DeviceAttendanceService {
           verified: false,
           distance: distance,
           radius: targetRadius,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          errorMessage: 'Anda berada di luar radius geofencing kantor (${distance.round()} m dari titik kantor, batas geofencing ${targetRadius.round()} m).',
+          latitude: position.latitude,
+          longitude: position.longitude,
+          accuracyMeters: position.accuracy,
+          errorMessage:
+              'Anda berada di luar radius kantor (${distance.round()} m dari kantor, batas ${targetRadius.round()} m).',
         );
       }
 
@@ -104,15 +130,17 @@ class DeviceAttendanceService {
         verified: true,
         distance: distance,
         radius: targetRadius,
-        latitude: p.latitude,
-        longitude: p.longitude,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracyMeters: position.accuracy,
       );
     } catch (e) {
       return GeolocationVerificationResult(
         verified: false,
         distance: 0,
         radius: targetRadius,
-        errorMessage: 'Gagal mendeteksi koordinat GPS: ${e.toString().replaceFirst('Exception: ', '')}. Pastikan izin lokasi aplikasi telah diizinkan pada pengaturan perangkat.',
+        errorMessage:
+            'Gagal memperoleh titik GPS: ${e.toString().replaceFirst('Exception: ', '')}.',
       );
     }
   }

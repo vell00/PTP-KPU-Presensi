@@ -5,15 +5,17 @@ import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from 'r
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix icon default Leaflet di bundler Webpack/Next.js
-const defaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+// Self-contained SVG pin marker (no external CDN dependency)
+const kpuPinIcon = L.divIcon({
+  className: 'kpu-map-pin',
+  html: `<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 2C9.925 2 5 6.925 5 13C5 20.75 16 30 16 30C16 30 27 20.75 27 13C27 6.925 22.075 2 16 2Z" fill="#D52832" stroke="#07142F" stroke-width="2"/>
+      <circle cx="16" cy="13" r="4.5" fill="#FFFFFF"/>
+    </svg>
+  </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 30],
 });
 
 interface LocationPickerProps {
@@ -23,7 +25,6 @@ interface LocationPickerProps {
   onChange: (lat: number, lng: number) => void;
 }
 
-// Komponen penangkap klik di peta
 function MapClickHandler({ onChange }: { onChange: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
@@ -33,11 +34,10 @@ function MapClickHandler({ onChange }: { onChange: (lat: number, lng: number) =>
   return null;
 }
 
-// Komponen untuk sinkronisasi posisi kamera ketika koordinat berubah via input
 function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
-    if (!isNaN(lat) && !isNaN(lng)) {
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
       map.setView([lat, lng], map.getZoom());
     }
   }, [lat, lng, map]);
@@ -53,18 +53,18 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
 
   if (!mounted) {
     return (
-      <div className="w-full h-80 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 text-sm animate-pulse">
-        Memuat Peta...
+      <div className="w-full h-80 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 text-sm animate-pulse">
+        Memuat Peta Geofencing...
       </div>
     );
   }
 
-  const validLat = isNaN(lat) ? 1.4748 : lat;
-  const validLng = isNaN(lng) ? 124.8421 : lng;
+  const validLat = Number.isNaN(lat) ? 1.4748 : lat;
+  const validLng = Number.isNaN(lng) ? 124.8421 : lng;
 
   return (
     <div className="space-y-2">
-      <div className="h-80 w-full rounded-xl overflow-hidden border border-slate-300 relative z-0 shadow-inner">
+      <div className="h-80 w-full rounded-xl overflow-hidden border border-slate-200 relative z-0">
         <MapContainer
           center={[validLat, validLng]}
           zoom={16}
@@ -72,17 +72,16 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
           style={{ height: '100%', width: '100%' }}
         >
           <TileLayer
-            attribution='&copy; Google Maps'
-            url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
           <Marker
             position={[validLat, validLng]}
-            icon={defaultIcon}
+            icon={kpuPinIcon}
             draggable={true}
             eventHandlers={{
               dragend(e) {
-                const marker = e.target;
-                const position = marker.getLatLng();
+                const position = e.target.getLatLng();
                 onChange(position.lat, position.lng);
               },
             }}
@@ -93,7 +92,7 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
             pathOptions={{
               color: '#D52832',
               fillColor: '#D52832',
-              fillOpacity: 0.2,
+              fillOpacity: 0.16,
               weight: 2,
             }}
           />
@@ -101,10 +100,11 @@ export default function LocationPicker({ lat, lng, radius, onChange }: LocationP
           <MapRecenter lat={validLat} lng={validLng} />
         </MapContainer>
       </div>
-      <p className="text-xs text-slate-500 flex items-center gap-1.5">
-        <span className="inline-block w-2 h-2 rounded-full bg-[#D52832]"></span>
+      <p className="text-xs text-slate-500 flex items-center gap-2">
+        <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#D52832] shrink-0" />
         <span>
-          <strong>Tips:</strong> Klik di mana saja pada peta atau geser pin marker untuk menentukan titik kantor. Lingkaran merah menunjukkan jangkauan radius geofencing presensi.
+          Klik di peta atau seret pin merah untuk mengatur titik pusat kantor. Lingkaran menunjukkan
+          radius toleransi presensi WFO.
         </span>
       </p>
     </div>

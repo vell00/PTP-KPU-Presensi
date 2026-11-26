@@ -11,18 +11,17 @@ import {
   EyeOff,
   AlertCircle,
   MapPin,
-  Fingerprint,
   Clock,
-  Building2,
+  Coins,
+  FileCheck2,
 } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  const { login } = useAdminAuth();
+  const { login, configured } = useAdminAuth();
 
   const [nip, setNip] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +35,7 @@ export default function AdminLoginPage() {
       return;
     }
     if (!/^[0-9]{18}$/.test(cleanNip)) {
-      setError('NIP harus terdiri dari 18 digit angka.');
+      setError('NIP harus terdiri dari tepat 18 digit angka.');
       return;
     }
     if (!password) {
@@ -48,519 +47,228 @@ export default function AdminLoginPage() {
     const res = await login(cleanNip, password);
     setBusy(false);
     if (!res.success) {
-      setError(res.error || 'Gagal masuk ke portal admin.');
+      setError(res.error || 'Gagal masuk ke portal administrator.');
     }
   };
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        width: '100%',
-        backgroundColor: '#040C1D',
-        color: '#f1f5f9',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Background Foto Kantor KPU Sulut */}
+    <div className="relative min-h-screen w-full bg-[#040C1D] text-slate-100 flex flex-col overflow-x-hidden">
+      {/* Institutional Office Backdrop */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/images/kantor_kpu_sulut.jpg"
         alt=""
         aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center',
-          zIndex: 0,
-          pointerEvents: 'none',
-          userSelect: 'none',
-        }}
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none opacity-30"
       />
-
-      {/* Overlay Biru Tua Transparan */}
       <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 1,
-          background:
-            'linear-gradient(135deg, rgba(4,12,29,0.95) 0%, rgba(7,20,47,0.90) 50%, rgba(11,30,66,0.87) 100%)',
-          backdropFilter: 'blur(2px)',
-        }}
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-br from-[#040C1D]/95 via-[#07142F]/90 to-[#0B1F45]/92"
       />
 
-      {/* Radial Glow Aksen */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '25%',
-          left: '2.5rem',
-          width: '24rem',
-          height: '24rem',
-          background: 'rgba(22,54,108,0.4)',
-          borderRadius: '50%',
-          filter: 'blur(80px)',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      />
-
-      {/* ===== NAVBAR ===== */}
-      <header
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          width: '100%',
-          padding: '1.25rem 3.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(255,255,255,0.10)',
-          backdropFilter: 'blur(12px)',
-          backgroundColor: 'rgba(7,20,47,0.40)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-          {/* Logo KPU - pakai img biasa, bukan next/image */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/logo_kpu_sulut.jpg"
-            alt="Logo KPU Sulawesi Utara"
-            width={44}
-            height={44}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '1px solid rgba(255,255,255,0.20)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-              flexShrink: 0,
-            }}
-          />
-          <div>
-            <span
-              style={{
-                display: 'block',
-                fontSize: '10px',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                color: '#B5C6DE',
-              }}
-            >
-              KOMISI PEMILIHAN UMUM
-            </span>
-            <span
-              style={{
-                display: 'block',
-                fontSize: '15px',
-                fontWeight: 900,
-                letterSpacing: '-0.02em',
-                color: '#ffffff',
-                lineHeight: 1,
-                marginTop: '2px',
-              }}
-            >
-              Provinsi Sulawesi Utara
-            </span>
+      {/* Top Institutional Bar */}
+      <header className="relative z-10 w-full border-b border-white/10 bg-[#07142F]/60">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo_kpu_sulut.jpg"
+              alt="Logo KPU Provinsi Sulawesi Utara"
+              width={42}
+              height={42}
+              className="w-10 h-10 rounded-full object-cover border border-white/25 shrink-0"
+            />
+            <div>
+              <p className="text-[11px] font-semibold tracking-wide text-slate-300 leading-tight">
+                Komisi Pemilihan Umum
+              </p>
+              <p className="text-sm sm:text-base font-bold text-white tracking-tight leading-tight mt-0.5">
+                Provinsi Sulawesi Utara
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Badge Admin */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.375rem 0.875rem',
-            borderRadius: '9999px',
-            background: 'rgba(255,255,255,0.10)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            fontSize: '11px',
-            fontWeight: 700,
-            color: '#e2e8f0',
-          }}
-        >
-          <ShieldCheck style={{ width: '14px', height: '14px', color: '#D52832' }} />
-          <span>PORTAL ADMINISTRATOR</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-xs font-semibold text-slate-100">
+            <ShieldCheck className="w-4 h-4 text-[#F87171]" />
+            <span>Portal Administrator</span>
+          </div>
         </div>
       </header>
 
-      {/* ===== KONTEN UTAMA SPLIT LAYOUT ===== */}
-      <main
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          flex: 1,
-          width: '100%',
-          maxWidth: '80rem',
-          margin: '0 auto',
-          padding: '4rem 3rem',
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '4rem',
-          flexWrap: 'wrap',
-        }}
-      >
-        {/* ===== SISI KIRI: HERO BRANDING ===== */}
-        <div style={{ flex: '1 1 360px', maxWidth: '480px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '20px', height: '2px', background: '#D52832' }} />
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 900,
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                color: '#94a3b8',
-              }}
-            >
-              PORTAL RESMI SEKRETARIAT
-            </span>
-          </div>
-
-          <h1
-            style={{
-              fontSize: 'clamp(28px, 4vw, 46px)',
-              fontWeight: 900,
-              color: '#ffffff',
-              letterSpacing: '-0.03em',
-              lineHeight: 1.15,
-              marginBottom: '1.25rem',
-            }}
-          >
-            Sistem Presensi{' '}
-            <span style={{ color: '#94a3b8' }}>KPU Sulawesi Utara.</span>
+      {/* Main Split Content */}
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-5 sm:px-10 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+        {/* Left Institutional Context */}
+        <section className="lg:col-span-7 space-y-6 max-w-xl">
+          <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold text-white tracking-[-0.025em] leading-[1.15]">
+            Sistem Presensi &amp; Tunjangan Kinerja KPU Sulawesi Utara
           </h1>
 
-          <p
-            style={{
-              fontSize: '14px',
-              color: '#B5C6DE',
-              lineHeight: 1.75,
-              marginBottom: '2rem',
-              maxWidth: '400px',
-            }}
-          >
-            Satu akses terintegrasi untuk pusat kendali kehadiran pegawai, pemantauan radius geofencing kantor, verifikasi izin &amp; cuti, serta rekapitulasi tunjangan kinerja Sekretariat KPU Provinsi Sulawesi Utara.
+          <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
+            Pusat kendali kehadiran aparatur Sekretariat KPU Provinsi Sulawesi Utara — memantau
+            presensi WFO/WFH berbasis geofencing, verifikasi izin &amp; cuti, serta rekapitulasi
+            tunjangan kinerja secara terpadu.
           </p>
 
-          {/* Feature Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            {[
-              { icon: <Fingerprint style={{ width: '16px', height: '16px', color: '#f87171' }} />, title: 'Geofencing Presensi', desc: 'Radius kantor KPU Sulut akurat' },
-              { icon: <Clock style={{ width: '16px', height: '16px', color: '#60a5fa' }} />, title: 'Rekapitulasi Kehadiran', desc: 'Data real-time masuk & kepulangan' },
-              { icon: <Building2 style={{ width: '16px', height: '16px', color: '#34d399' }} />, title: 'Tunjangan Kinerja', desc: 'Kalkulasi 40% hadir + 60% SKP' },
-            ].map((f) => (
-              <div
-                key={f.title}
-                style={{
-                  padding: '0.875rem',
-                  borderRadius: '0.75rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: 'rgba(255,255,255,0.10)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '0.5rem',
-                  }}
-                >
-                  {f.icon}
-                </div>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#fff', marginBottom: '2px' }}>{f.title}</div>
-                <div style={{ fontSize: '10px', color: '#94a3b8', lineHeight: 1.4 }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-white/15">
+            <div className="space-y-1.5">
+              <dt className="flex items-center gap-2 text-xs font-semibold text-white">
+                <Clock className="w-4 h-4 text-sky-300 shrink-0" />
+                Presensi WITA Real-Time
+              </dt>
+              <dd className="text-xs text-slate-300 leading-relaxed">
+                Pencatatan waktu server UTC+8 dengan validasi radius kantor dan bukti foto.
+              </dd>
+            </div>
+            <div className="space-y-1.5">
+              <dt className="flex items-center gap-2 text-xs font-semibold text-white">
+                <FileCheck2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                Persetujuan Izin &amp; Cuti
+              </dt>
+              <dd className="text-xs text-slate-300 leading-relaxed">
+                Tinjauan pengajuan multi-hari terhubung langsung ke aplikasi pegawai.
+              </dd>
+            </div>
+            <div className="space-y-1.5">
+              <dt className="flex items-center gap-2 text-xs font-semibold text-white">
+                <Coins className="w-4 h-4 text-amber-300 shrink-0" />
+                Kalkulasi Tukin Resmi
+              </dt>
+              <dd className="text-xs text-slate-300 leading-relaxed">
+                Mengacu Perpres 126/2017 &amp; Perpres 11/2016 (40% disiplin + 60% SKP).
+              </dd>
+            </div>
+          </dl>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '12px', color: '#64748b' }}>
-            <MapPin style={{ width: '14px', height: '14px', color: '#D52832', flexShrink: 0 }} />
-            <span>Kantor KPU Provinsi Sulawesi Utara, Jl. Diponegoro No. 25, Manado</span>
+          <div className="flex items-center gap-2 text-xs text-slate-300 pt-2">
+            <MapPin className="w-4 h-4 text-[#F87171] shrink-0" />
+            <span>Jl. Diponegoro No. 25, Manado, Sulawesi Utara</span>
           </div>
-        </div>
+        </section>
 
-        {/* ===== SISI KANAN: CARD LOGIN ===== */}
-        <div style={{ flex: '0 0 auto', width: '100%', maxWidth: '420px' }}>
-          <div
-            style={{
-              background: 'rgba(20,31,54,0.92)',
-              border: '1px solid rgba(46,63,95,0.90)',
-              borderRadius: '1.25rem',
-              padding: '2rem',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(16px)',
-            }}
-          >
-            {/* Card Header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingBottom: '1.25rem',
-                borderBottom: '1px solid rgba(38,53,80,1)',
-                marginBottom: '1.5rem',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.375rem',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '0.5rem',
-                  background: 'rgba(213,40,50,0.15)',
-                  border: '1px solid rgba(213,40,50,0.30)',
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  color: '#EE5A62',
-                  textTransform: 'uppercase' as const,
-                  letterSpacing: '0.08em',
-                }}
-              >
-                <Lock style={{ width: '12px', height: '12px' }} />
-                <span>AKSES ADMINISTRATOR</span>
-              </div>
-              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>KPU Sulut</span>
+        {/* Right Sign-In Panel */}
+        <section className="lg:col-span-5 w-full max-w-md lg:ml-auto">
+          <div className="bg-[#0E1B36] border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-white tracking-tight">Masuk Administrator</h2>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                Gunakan 18 digit NIP dan kata sandi akun administrator terdaftar.
+              </p>
             </div>
 
-            <h2
-              style={{
-                fontSize: '22px',
-                fontWeight: 900,
-                color: '#ffffff',
-                letterSpacing: '-0.02em',
-                marginBottom: '0.25rem',
-              }}
-            >
-              Selamat datang
-            </h2>
-            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '1.5rem' }}>
-              Silakan masuk menggunakan NIP dan kata sandi akun Admin.
-            </p>
-
-            {/* Error Alert */}
-            {error && (
-              <div
-                style={{
-                  marginBottom: '1.25rem',
-                  padding: '0.75rem',
-                  borderRadius: '0.75rem',
-                  background: 'rgba(239,68,68,0.15)',
-                  border: '1px solid rgba(239,68,68,0.30)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.625rem',
-                  fontSize: '12px',
-                  color: '#fca5a5',
-                }}
-              >
-                <AlertCircle style={{ width: '16px', height: '16px', color: '#D52832', flexShrink: 0, marginTop: '1px' }} />
-                <span style={{ lineHeight: 1.5 }}>{error}</span>
+            {!configured && (
+              <div className="mb-5 p-3.5 rounded-xl bg-amber-950/60 border border-amber-500/40 flex items-start gap-2.5 text-xs text-amber-200 leading-relaxed">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  Variabel lingkungan Firebase (<code className="font-mono">.env.local</code>) belum
+                  terdeteksi. Lengkapi konfigurasi proyek untuk mengaktifkan login.
+                </span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {/* Field NIP */}
+            {error && (
+              <div
+                role="alert"
+                className="mb-5 p-3.5 rounded-xl bg-rose-950/70 border border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-100 leading-relaxed"
+              >
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.375rem' }}>
-                  Nomor Induk Pegawai (NIP) *
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <User style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#64748b' }} />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="admin-nip" className="text-xs font-semibold text-slate-100">
+                    Nomor Induk Pegawai (NIP)
+                  </label>
+                  <span className="text-xs font-mono tabular-nums text-slate-300">
+                    {nip.length}/18
+                  </span>
+                </div>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    id="admin-nip"
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="username"
                     required
                     maxLength={18}
-                    placeholder="Contoh: 198001012005011001"
+                    placeholder="198001012005011001"
                     value={nip}
                     onChange={(e) => setNip(e.target.value.replace(/\D/g, ''))}
-                    style={{
-                      width: '100%',
-                      paddingLeft: '2.5rem',
-                      paddingRight: '1rem',
-                      paddingTop: '0.625rem',
-                      paddingBottom: '0.625rem',
-                      background: '#1E2B45',
-                      border: '1px solid #2E3F5F',
-                      borderRadius: '0.75rem',
-                      fontSize: '13px',
-                      color: '#fff',
-                      fontFamily: 'monospace',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                    onFocus={(e) => { e.target.style.borderColor = '#D52832'; e.target.style.boxShadow = '0 0 0 2px rgba(213,40,50,0.25)'; }}
-                    onBlur={(e) => { e.target.style.borderColor = '#2E3F5F'; e.target.style.boxShadow = 'none'; }}
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#172544] border border-slate-600/80 rounded-xl text-sm font-mono tabular-nums text-white placeholder:text-slate-400 focus:border-[#D52832] focus:ring-2 focus:ring-[#D52832]/30 focus:outline-none transition-colors"
                   />
                 </div>
-                <span style={{ fontSize: '10px', color: '#475569', display: 'block', marginTop: '4px' }}>
-                  Gunakan 18 digit NIP resmi yang terdaftar sebagai Admin.
-                </span>
               </div>
 
-              {/* Kata Sandi */}
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.375rem' }}>
-                  Kata Sandi *
+                <label
+                  htmlFor="admin-password"
+                  className="block text-xs font-semibold text-slate-100 mb-1.5"
+                >
+                  Kata Sandi
                 </label>
-                <div style={{ position: 'relative' }}>
-                  <Lock style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#64748b' }} />
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
+                    id="admin-password"
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
                     required
                     placeholder="Masukkan kata sandi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      paddingLeft: '2.5rem',
-                      paddingRight: '2.75rem',
-                      paddingTop: '0.625rem',
-                      paddingBottom: '0.625rem',
-                      background: '#1E2B45',
-                      border: '1px solid #2E3F5F',
-                      borderRadius: '0.75rem',
-                      fontSize: '13px',
-                      color: '#fff',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                    onFocus={(e) => { e.target.style.borderColor = '#D52832'; e.target.style.boxShadow = '0 0 0 2px rgba(213,40,50,0.25)'; }}
-                    onBlur={(e) => { e.target.style.borderColor = '#2E3F5F'; e.target.style.boxShadow = 'none'; }}
+                    className="w-full pl-10 pr-11 py-2.5 bg-[#172544] border border-slate-600/80 rounded-xl text-sm text-white placeholder:text-slate-400 focus:border-[#D52832] focus:ring-2 focus:ring-[#D52832]/30 focus:outline-none transition-colors"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '0.875rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 0 }}
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-slate-300 hover:text-white rounded-lg transition-colors"
                   >
-                    {showPassword ? <EyeOff style={{ width: '16px', height: '16px' }} /> : <Eye style={{ width: '16px', height: '16px' }} />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              {/* Tombol Submit */}
-              <div style={{ paddingTop: '0.5rem' }}>
-                <button
-                  type="submit"
-                  disabled={busy}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem',
-                    background: busy ? 'rgba(213,40,50,0.5)' : '#D52832',
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: '14px',
-                    border: 'none',
-                    borderRadius: '0.75rem',
-                    cursor: busy ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    transition: 'background 0.2s',
-                    boxShadow: '0 8px 24px rgba(213,40,50,0.30)',
-                  }}
-                  onMouseEnter={(e) => { if (!busy) (e.currentTarget as HTMLButtonElement).style.background = '#B91C1C'; }}
-                  onMouseLeave={(e) => { if (!busy) (e.currentTarget as HTMLButtonElement).style.background = '#D52832'; }}
-                >
-                  {busy ? (
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: '16px',
-                        height: '16px',
-                        border: '2px solid #fff',
-                        borderTopColor: 'transparent',
-                        borderRadius: '50%',
-                        animation: 'spin 0.7s linear infinite',
-                      }}
-                    />
-                  ) : (
-                    <>
-                      <span>Masuk ke Portal Admin</span>
-                      <ArrowRight style={{ width: '16px', height: '16px' }} />
-                    </>
-                  )}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full mt-2 py-2.5 px-4 bg-[#D52832] hover:bg-[#B91C1C] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                {busy ? (
+                  <>
+                    <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span>Memverifikasi...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Masuk ke Portal Admin</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
             </form>
 
-            {/* Footer Card */}
-            <div
-              style={{
-                marginTop: '1.5rem',
-                paddingTop: '1rem',
-                borderTop: '1px solid rgba(38,53,80,1)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.625rem',
-                fontSize: '11px',
-                color: '#475569',
-                lineHeight: 1.6,
-              }}
-            >
-              <ShieldCheck style={{ width: '16px', height: '16px', color: '#475569', flexShrink: 0, marginTop: '1px' }} />
-              <span>
-                <strong style={{ color: '#64748b' }}>Khusus Hak Akses Admin:</strong> Akun pegawai biasa tidak diizinkan masuk ke portal ini. Kredensial diproteksi oleh Firebase Authentication.
-              </span>
+            <div className="mt-6 pt-4 border-t border-slate-700/70 flex items-start gap-2.5 text-xs text-slate-300 leading-relaxed">
+              <ShieldCheck className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
+              <p>
+                Akses terbatas bagi Administrator Sekretariat KPU Sulut. Pendaftaran mandiri
+                dinonaktifkan demi keamanan data kepegawaian.
+              </p>
             </div>
           </div>
-        </div>
+        </section>
       </main>
 
-      {/* ===== FOOTER ===== */}
-      <footer
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          width: '100%',
-          padding: '1rem 3.5rem',
-          borderTop: '1px solid rgba(255,255,255,0.10)',
-          backdropFilter: 'blur(12px)',
-          backgroundColor: 'rgba(7,20,47,0.40)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '11px',
-          color: '#475569',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
-        }}
-      >
-        <span>© 2026 Komisi Pemilihan Umum Provinsi Sulawesi Utara</span>
-        <span>Sistem Presensi KPU Sulawesi Utara • Versi Admin 2.0</span>
+      {/* Footer */}
+      <footer className="relative z-10 w-full border-t border-white/10 bg-[#07142F]/50">
+        <div className="max-w-7xl mx-auto px-5 sm:px-10 py-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+          <span>© 2026 Komisi Pemilihan Umum Provinsi Sulawesi Utara</span>
+          <span>Zona Waktu Operasional: WITA (UTC+8)</span>
+        </div>
       </footer>
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @media (max-width: 900px) {
-          main { flex-direction: column !important; padding: 2rem 1.5rem !important; }
-          header { padding: 1rem 1.5rem !important; }
-          footer { padding: 0.75rem 1.5rem !important; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/theme/colors.dart';
 import '../../../users/domain/organization.dart';
-
-const _navy = Color(0xFF07142F);
-const _navyDark = Color(0xFF040C1D);
-const _kpuRed = Color(0xFFD52832);
 
 class LoginPanel extends StatefulWidget {
   final bool busy;
   final String? error;
   final String? notice;
   final Future<void> Function(String nip, String password) onSubmit;
-  final VoidCallback onOpenSignUp;
 
   const LoginPanel({
     super.key,
@@ -18,7 +15,6 @@ class LoginPanel extends StatefulWidget {
     this.error,
     this.notice,
     required this.onSubmit,
-    required this.onOpenSignUp,
   });
 
   @override
@@ -44,168 +40,161 @@ class _LoginPanelState extends State<LoginPanel> {
     await widget.onSubmit(_nip.text.trim(), _password.text);
   }
 
-  InputDecoration _ptpInputDecoration({
-    required String hint,
-    required IconData prefixIcon,
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF7F8B9F)),
-      prefixIcon: Icon(prefixIcon, size: 18, color: const Color(0xFF8F9BB0)),
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: const Color(0xFF1E2B45).withValues(alpha: 0.95),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2E3F5F), width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2E3F5F), width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _kpuRed, width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+  void _showForgotPasswordInfo() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Lupa Kata Sandi?',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'Demi keamanan akun ASN, pengaturan ulang kata sandi dilakukan oleh Administrator Sekretariat KPU Provinsi Sulawesi Utara melalui Portal Admin.\n\nHubungi Subbagian SDM dengan menyertakan NIP Anda untuk mereset kata sandi ke sandi awal.',
+          style: TextStyle(fontSize: 13.5, color: inkSecondary, height: 1.5),
+        ),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: navy),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Mengerti'),
+          ),
+        ],
       ),
     );
   }
 
+  InputDecoration _darkInput({
+    required String hint,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(fontSize: 13.5, color: Color(0xFF94A3B8)),
+    prefixIcon: Icon(prefixIcon, size: 19, color: const Color(0xFFCBD5E1)),
+    suffixIcon: suffixIcon,
+    filled: true,
+    fillColor: const Color(0xFF172544),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF334155)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFF334155)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: kpuRed, width: 1.6),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFFCA5A5)),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Color(0xFFFCA5A5), width: 1.6),
+    ),
+    errorStyle: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 11.5),
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _navyDark,
+      backgroundColor: navyDark,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Background Foto Kantor KPU Sulut
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/kantor_kpu_sulut.jpg',
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-              errorBuilder: (context, error, stackTrace) => Container(color: _navyDark),
+            child: Opacity(
+              opacity: 0.28,
+              child: Image.asset(
+                'assets/images/kantor_kpu_sulut.jpg',
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
+              ),
             ),
           ),
-
-          // 2. Lapisan Biru Tua Transparan KPU
           Positioned.fill(
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    _navyDark.withValues(alpha: 0.88),
-                    _navy.withValues(alpha: 0.85),
-                    const Color(0xFF0D224A).withValues(alpha: 0.90),
+                    navyDark.withValues(alpha: 0.90),
+                    navy.withValues(alpha: 0.94),
+                    navyDark.withValues(alpha: 0.98),
                   ],
                 ),
               ),
             ),
           ),
-
-          // 3. Konten Mobile Centered
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
+                  constraints: const BoxConstraints(maxWidth: 420),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // LOGO KPU SULUT DI ATAS CARD LOGIN
+                      // Institutional Brand Mark
                       Container(
-                        width: 84,
-                        height: 84,
+                        width: 72,
+                        height: 72,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            width: 2.5,
+                            color: Colors.white.withValues(alpha: 0.28),
+                            width: 2,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              blurRadius: 18,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
                         ),
                         child: ClipOval(
                           child: Image.asset(
                             'assets/images/logo_kpu_sulut.jpg',
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: _kpuRed,
-                              child: const Icon(Icons.how_to_vote, color: Colors.white, size: 36),
+                            errorBuilder: (_, _, _) => Container(
+                              color: kpuRed,
+                              child: const Icon(
+                                Icons.how_to_vote_rounded,
+                                color: Colors.white,
+                                size: 32,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
-
-                      // Teks Judul Instansi
                       const Text(
-                        'KOMISI PEMILIHAN UMUM',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Color(0xFFCBD5E1),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'Provinsi Sulawesi Utara',
+                        'Presensi KPU Sulawesi Utara',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.4,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Sistem Presensi KPU Sulawesi Utara',
+                        'Aplikasi Kehadiran Pegawai • Zona WITA (UTC+8)',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF93A7C7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFCBD5E1),
+                          fontSize: 12.5,
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 24),
 
-                      // CARD FORM LOGIN
+                      // Auth Card
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 28),
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF141F36).withValues(alpha: 0.94),
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: const Color(0xFF2E3F5F).withValues(alpha: 0.8),
-                            width: 1.2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.45),
-                              blurRadius: 30,
-                              offset: const Offset(0, 14),
-                            ),
-                          ],
+                          color: const Color(0xFF0E1B36),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFF283A5E)),
                         ),
                         child: AutofillGroup(
                           child: Form(
@@ -214,64 +203,47 @@ class _LoginPanelState extends State<LoginPanel> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // Badge Akses Pegawai
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                      decoration: BoxDecoration(
-                                        color: _kpuRed.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: _kpuRed.withValues(alpha: 0.3)),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Icon(Icons.lock_outline_rounded, size: 13, color: Color(0xFFEE5A62)),
-                                          SizedBox(width: 5),
-                                          Text(
-                                            'AKSES PEGAWAI',
-                                            style: TextStyle(
-                                              color: Color(0xFFEE5A62),
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w800,
-                                              letterSpacing: 0.8,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-
-                                // Title Selamat Datang
                                 const Text(
-                                  'Selamat datang',
+                                  'Masuk Akun Pegawai',
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.3,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
-                                  'Silakan masuk ke akun Sistem Presensi KPU Sulawesi Utara Anda.',
+                                  'Gunakan 18 digit NIP dan kata sandi kepegawaian Anda.',
                                   style: TextStyle(
-                                    color: Color(0xFF94A3B8),
-                                    fontSize: 12,
+                                    color: Color(0xFFCBD5E1),
+                                    fontSize: 12.5,
                                   ),
                                 ),
                                 const SizedBox(height: 20),
 
-                                // Label NIP
-                                const Text(
-                                  'Nomor Induk Pegawai (NIP)',
-                                  style: TextStyle(
-                                    color: Color(0xFFE2E8F0),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
+                                // NIP Label + Counter
+                                ValueListenableBuilder<TextEditingValue>(
+                                  valueListenable: _nip,
+                                  builder: (_, val, _) => Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Nomor Induk Pegawai (NIP)',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${val.text.length}/18',
+                                        style: const TextStyle(
+                                          color: Color(0xFFCBD5E1),
+                                          fontSize: 11.5,
+                                          fontFeatures: [FontFeature.tabularFigures()],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -279,49 +251,55 @@ class _LoginPanelState extends State<LoginPanel> {
                                   controller: _nip,
                                   enabled: !widget.busy,
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(18),
+                                  ],
                                   textInputAction: TextInputAction.next,
+                                  autofillHints: const [AutofillHints.username],
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
+                                    fontFeatures: [FontFeature.tabularFigures()],
                                   ),
-                                  autofillHints: const [AutofillHints.username],
-                                  decoration: _ptpInputDecoration(
-                                    hint: 'Masukkan 18 digit NIP',
+                                  decoration: _darkInput(
+                                    hint: 'Contoh: 198503152010011002',
                                     prefixIcon: Icons.badge_outlined,
                                   ),
                                   validator: (value) =>
                                       value == null || !validNip(value.trim())
-                                      ? 'NIP harus 18 digit angka'
+                                      ? 'NIP harus terdiri dari 18 digit angka'
                                       : null,
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Gunakan NIP sesuai identitas kepegawaian Anda.',
-                                  style: TextStyle(
-                                    color: Color(0xFF6B7D98),
-                                    fontSize: 10,
-                                  ),
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Label Kata Sandi
+                                // Password Label + Interactive Forgot Link
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text(
-                                      'Kata sandi',
+                                      'Kata Sandi',
                                       style: TextStyle(
-                                        color: Color(0xFFE2E8F0),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    Text(
-                                      'Lupa kata sandi?',
-                                      style: TextStyle(
-                                        color: const Color(0xFF8B9FB8),
-                                        fontSize: 11,
+                                    TextButton(
+                                      onPressed: widget.busy ? null : _showForgotPasswordInfo,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: const Color(0xFF93C5FD),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 4,
+                                        ),
+                                        minimumSize: const Size(48, 36),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: const Text(
+                                        'Lupa kata sandi?',
+                                        style: TextStyle(fontSize: 12),
                                       ),
                                     ),
                                   ],
@@ -331,19 +309,23 @@ class _LoginPanelState extends State<LoginPanel> {
                                   controller: _password,
                                   enabled: !widget.busy,
                                   obscureText: _obscure,
-                                  style: const TextStyle(color: Colors.white, fontSize: 13),
                                   autofillHints: const [AutofillHints.password],
                                   onFieldSubmitted: (_) => _submit(),
-                                  decoration: _ptpInputDecoration(
+                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  decoration: _darkInput(
                                     hint: 'Masukkan kata sandi',
                                     prefixIcon: Icons.lock_outline_rounded,
                                     suffixIcon: IconButton(
-                                      tooltip: _obscure ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
+                                      tooltip: _obscure
+                                          ? 'Tampilkan kata sandi'
+                                          : 'Sembunyikan kata sandi',
                                       onPressed: () => setState(() => _obscure = !_obscure),
                                       icon: Icon(
-                                        _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                                        size: 18,
-                                        color: const Color(0xFF8F9BB0),
+                                        _obscure
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        size: 19,
+                                        color: const Color(0xFFCBD5E1),
                                       ),
                                     ),
                                   ),
@@ -353,74 +335,69 @@ class _LoginPanelState extends State<LoginPanel> {
                                       : null,
                                 ),
 
-                                // Notice & Error Alerts
-                                if (widget.notice != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 12),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                                if (widget.notice != null) ...[
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: info.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFF60A5FA).withValues(alpha: 0.5),
                                       ),
-                                      child: Text(
-                                        widget.notice!,
-                                        style: const TextStyle(
-                                          color: Color(0xFF93C5FD),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 11,
-                                        ),
+                                    ),
+                                    child: Text(
+                                      widget.notice!,
+                                      style: const TextStyle(
+                                        color: Color(0xFFDBEAFE),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                   ),
+                                ],
 
-                                if (widget.error != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 12),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                                if (widget.error != null) ...[
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: danger.withValues(alpha: 0.22),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFFFCA5A5).withValues(alpha: 0.5),
                                       ),
-                                      child: Row(
-                                        children: [
-                                          const Icon(Icons.error_outline, size: 15, color: Color(0xFFFCA5A5)),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Text(
-                                              widget.error!,
-                                              style: const TextStyle(
-                                                color: Color(0xFFFCA5A5),
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(
+                                          Icons.error_outline_rounded,
+                                          size: 16,
+                                          color: Color(0xFFFCA5A5),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            widget.error!,
+                                            style: const TextStyle(
+                                              color: Color(0xFFFEE2E2),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ),
+                                ],
 
                                 const SizedBox(height: 20),
-
-                                // Tombol Masuk ke Portal (Merah KPU)
                                 SizedBox(
                                   width: double.infinity,
                                   child: FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: _kpuRed,
-                                      disabledBackgroundColor: _kpuRed.withValues(alpha: 0.5),
-                                      padding: const EdgeInsets.symmetric(vertical: 15),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 2,
-                                    ),
                                     onPressed: widget.busy ? null : _submit,
                                     child: widget.busy
                                         ? const SizedBox(
@@ -431,70 +408,36 @@ class _LoginPanelState extends State<LoginPanel> {
                                               color: Colors.white,
                                             ),
                                           )
-                                        : Row(
+                                        : const Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
-                                            children: const [
-                                              Text(
-                                                'Masuk ke portal',
-                                                style: TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
+                                            children: [
+                                              Text('Masuk ke Portal'),
                                               SizedBox(width: 8),
-                                              Icon(Icons.arrow_forward_rounded, size: 17, color: Colors.white),
+                                              Icon(Icons.arrow_forward_rounded, size: 18),
                                             ],
                                           ),
                                   ),
                                 ),
 
-                                const SizedBox(height: 16),
-
-                                // Registrasi / Sign Up Link
-                                Center(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text(
-                                        'Belum memiliki akun? ',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF94A3B8),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: widget.busy ? null : widget.onOpenSignUp,
-                                        child: const Text(
-                                          'Daftar akun baru',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Color(0xFFEE5A62),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
                                 const SizedBox(height: 18),
-                                const Divider(color: Color(0xFF263550)),
-                                const SizedBox(height: 10),
-
-                                // Keamanan Footer Card
-                                Row(
+                                const Divider(color: Color(0xFF283A5E)),
+                                const SizedBox(height: 12),
+                                const Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Icon(Icons.verified_user_outlined, size: 14, color: Color(0xFF6B7D98)),
+                                  children: [
+                                    Icon(
+                                      Icons.verified_user_outlined,
+                                      size: 16,
+                                      color: Color(0xFFCBD5E1),
+                                    ),
                                     SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        'Akses khusus pegawai terdaftar. Jaga kerahasiaan akun dan PIN presensi Anda.',
+                                        'Akun pegawai didaftarkan secara terpusat oleh Administrator Sekretariat KPU Sulut.',
                                         style: TextStyle(
-                                          fontSize: 10,
-                                          color: Color(0xFF6B7D98),
-                                          height: 1.4,
+                                          color: Color(0xFFCBD5E1),
+                                          fontSize: 11.5,
+                                          height: 1.45,
                                         ),
                                       ),
                                     ),
@@ -506,14 +449,10 @@ class _LoginPanelState extends State<LoginPanel> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-                      // Footer Copyright Singkat
+                      const SizedBox(height: 18),
                       const Text(
                         '© 2026 KPU Provinsi Sulawesi Utara',
-                        style: TextStyle(
-                          color: Color(0xFF6B7D98),
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11.5),
                       ),
                     ],
                   ),

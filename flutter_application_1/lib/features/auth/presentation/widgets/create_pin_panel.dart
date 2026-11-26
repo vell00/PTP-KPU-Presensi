@@ -1,5 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/ui/components.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/theme/colors.dart';
+
+const _weakPins = {
+  '000000',
+  '111111',
+  '222222',
+  '333333',
+  '444444',
+  '555555',
+  '666666',
+  '777777',
+  '888888',
+  '999999',
+  '123456',
+  '654321',
+  '012345',
+  '543210',
+};
 
 class CreatePinPanel extends StatefulWidget {
   final bool busy;
@@ -33,75 +51,86 @@ class _CreatePinPanelState extends State<CreatePinPanel> {
 
   void _submit() {
     if (widget.busy || !_form.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
     widget.onSubmit(_pin.text.trim());
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF07142F),
-    body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              elevation: 8,
-              child: Padding(
-                padding: const EdgeInsets.all(28),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: navy,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: line),
+                ),
                 child: Form(
                   key: _form,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 60,
-                        height: 60,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0FDFA),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFCCFBF1), width: 2),
+                          color: kpuRedSoft,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: kpuRedBorder),
                         ),
-                        child: const Icon(Icons.pin_rounded, color: teal, size: 32),
+                        child: const Icon(Icons.pin_rounded, color: kpuRed, size: 28),
                       ),
                       const SizedBox(height: 16),
                       const Text(
                         'Buat PIN Presensi',
                         style: TextStyle(
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.w800,
+                          color: ink,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       const Text(
-                        'Sebagai pengguna baru, buat 6-digit PIN keamanan. PIN ini digunakan setiap kali melakukan absensi masuk & keluar.',
+                        'PIN 6 digit disimpan terenkripsi di server dan digunakan untuk memverifikasi presensi masuk & keluar Anda.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: TextStyle(fontSize: 12.5, color: muted, height: 1.45),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 22),
 
                       TextFormField(
                         controller: _pin,
                         enabled: !widget.busy,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
                         obscureText: true,
-                        maxLength: 6,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
-                        decoration: InputDecoration(
-                          labelText: 'Buat 6-Digit PIN',
-                          counterText: '',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          letterSpacing: 8,
+                          fontWeight: FontWeight.w700,
+                          color: ink,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'PIN Baru (6 Digit)',
                           hintText: '••••••',
-                          hintStyle: const TextStyle(letterSpacing: 8, color: Colors.grey),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().length != 6 || !RegExp(r'^\d{6}$').hasMatch(v.trim())) {
-                            return 'PIN harus terdiri dari tepat 6 digit angka';
+                          final val = v?.trim() ?? '';
+                          if (!RegExp(r'^\d{6}$').hasMatch(val)) {
+                            return 'PIN harus terdiri dari 6 digit angka';
+                          }
+                          if (_weakPins.contains(val)) {
+                            return 'Hindari pola mudah ditebak seperti 123456';
                           }
                           return null;
                         },
@@ -112,46 +141,50 @@ class _CreatePinPanelState extends State<CreatePinPanel> {
                         controller: _confirmPin,
                         enabled: !widget.busy,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
                         obscureText: true,
-                        maxLength: 6,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
-                        decoration: InputDecoration(
-                          labelText: 'Konfirmasi 6-Digit PIN',
-                          counterText: '',
-                          hintText: '••••••',
-                          hintStyle: const TextStyle(letterSpacing: 8, color: Colors.grey),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          letterSpacing: 8,
+                          fontWeight: FontWeight.w700,
+                          color: ink,
                         ),
-                        validator: (v) {
-                          if (v != _pin.text) {
-                            return 'Konfirmasi PIN tidak cocok';
-                          }
-                          return null;
-                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Konfirmasi PIN Baru',
+                          hintText: '••••••',
+                        ),
+                        validator: (v) =>
+                            v != _pin.text ? 'Konfirmasi PIN tidak cocok' : null,
                       ),
 
                       if (widget.error != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.error!,
-                          style: const TextStyle(color: Colors.red, fontSize: 12),
-                          textAlign: TextAlign.center,
+                        const SizedBox(height: 14),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: dangerBg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: dangerBorder),
+                          ),
+                          child: Text(
+                            widget.error!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: danger, fontSize: 12.5),
+                          ),
                         ),
                       ],
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 22),
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton(
                               onPressed: widget.busy ? null : widget.onLogout,
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
                               child: const Text('Keluar'),
                             ),
                           ),
@@ -159,16 +192,14 @@ class _CreatePinPanelState extends State<CreatePinPanel> {
                           Expanded(
                             child: FilledButton(
                               onPressed: widget.busy ? null : _submit,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: teal,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
                               child: widget.busy
                                   ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
                                   : const Text('Simpan PIN'),
                             ),
@@ -183,6 +214,6 @@ class _CreatePinPanelState extends State<CreatePinPanel> {
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
