@@ -17,6 +17,8 @@ const _weakPins = {
   '999999',
   '123456',
   '654321',
+  '012345',
+  '543210',
 };
 
 class ChangePinDialog extends StatefulWidget {
@@ -63,7 +65,9 @@ class _ChangePinDialogState extends State<ChangePinDialog> {
           });
 
       if (widget.store.currentUser != null) {
-        widget.store.currentUser = widget.store.currentUser!.copyWith(hasPin: true);
+        widget.store.setCurrentUser(
+          widget.store.currentUser!.copyWith(hasPin: true),
+        );
       }
 
       if (mounted) {

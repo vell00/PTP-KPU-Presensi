@@ -45,13 +45,36 @@ export function findDepartment(departmentId) {
   return departments.find((d) => d.id === departmentId) ?? null;
 }
 
+export function resolveSubdepartmentSlug(subdepartmentId) {
+  if (typeof subdepartmentId !== 'string' || subdepartmentId.trim().length === 0) {
+    return null;
+  }
+  const raw = subdepartmentId.trim();
+  for (const d of departments) {
+    for (const s of d.subdepartments) {
+      if (s.id === raw) return s.id;
+    }
+  }
+  const lower = raw.toLowerCase();
+  if (lower.includes('keuangan')) return 'keuangan';
+  if (lower.includes('umum') || lower.includes('logistik')) return 'umum_logistik';
+  if (lower.includes('teknis')) return 'teknis_pemilu';
+  if (lower.includes('hukum')) return 'hukum';
+  if (lower.includes('perencanaan') || lower.includes('data')) return 'perencanaan_data';
+  if (lower.includes('partisipasi') || lower.includes('humas') || lower.includes('sdm')) {
+    return 'partisipasi_humas_sdm';
+  }
+  return raw;
+}
+
 export function resolveUnitDisplayName(departmentId, subdepartmentId, positionLabel) {
   if (typeof positionLabel === 'string' && positionLabel.trim().length > 0) {
     return positionLabel.trim();
   }
   const dept = findDepartment(departmentId);
-  if (dept && subdepartmentId) {
-    const sub = dept.subdepartments.find((s) => s.id === subdepartmentId);
+  const slug = resolveSubdepartmentSlug(subdepartmentId);
+  if (dept && slug) {
+    const sub = dept.subdepartments.find((s) => s.id === slug);
     if (sub) return sub.name;
   }
   return dept?.name ?? 'Sekretariat KPU Sulut';

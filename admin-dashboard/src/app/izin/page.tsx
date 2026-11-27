@@ -157,7 +157,7 @@ export default function IzinPage() {
                     </td>
                     <td className="px-4 py-4 text-xs text-slate-600 max-w-xs space-y-1">
                       <p className="leading-relaxed">{req.reason}</p>
-                      {req.attachmentUrl && (
+                      {req.attachmentUrl && /^https?:\/\//i.test(req.attachmentUrl) && (
                         <a
                           href={req.attachmentUrl}
                           target="_blank"

@@ -36,7 +36,7 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
   Timer? _clockTimer;
   DateTime _now = witaNow();
   bool _busy = false;
-  bool _initialLoading = true;
+  late bool _initialLoading;
   bool _checkingGeo = false;
   GeolocationVerificationResult? _geoPreview;
 
@@ -54,10 +54,13 @@ class _EmployeeAttendancePageState extends State<EmployeeAttendancePage> {
   @override
   void initState() {
     super.initState();
+    _initialLoading = store.isRemote && store.currentUser != null;
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = witaNow());
     });
-    _syncInitialState();
+    if (_initialLoading) {
+      _syncInitialState();
+    }
   }
 
   @override

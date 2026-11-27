@@ -19,6 +19,11 @@ class AppStore extends ChangeNotifier {
 
   bool get isRemote => _repository != null;
 
+  void setCurrentUser(UserProfile? user) {
+    currentUser = user;
+    notifyListeners();
+  }
+
   List<Attendance> records = [];
   List<LeaveRequest> requests = [];
   bool fridayWfh = true;

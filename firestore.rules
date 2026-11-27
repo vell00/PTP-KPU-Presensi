@@ -73,7 +73,7 @@ service cloud.firestore {
           && d.endDate >= d.startDate
           && d.daysCount is int && d.daysCount >= 1 && d.daysCount <= 60
           && d.reason is string && d.reason.size() >= 3 && d.reason.size() <= 500
-          && (!('attachmentUrl' in d) || d.attachmentUrl == null || (d.attachmentUrl is string && d.attachmentUrl.size() <= 1000))
+          && (!('attachmentUrl' in d) || d.attachmentUrl == null || (d.attachmentUrl is string && d.attachmentUrl.size() <= 1000 && d.attachmentUrl.matches('^https?://.+')))
           && d.status == 'Menunggu'
           && d.createdAt == request.time;
       }

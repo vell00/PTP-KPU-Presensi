@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v2/https';
-import { defaultWorkHours, resolveUnitDisplayName } from './organization.js';
+import { defaultWorkHours, resolveSubdepartmentSlug, resolveUnitDisplayName } from './organization.js';
 import { verifyOwnProfile } from './user_service.js';
 import { verifyStoredPin } from './pin_service.js';
 
@@ -44,8 +44,9 @@ export function haversineMeters(lat1, lon1, lat2, lon2) {
 }
 
 export function isWfhAllowed(dayName, subdepartmentId, wfhSchedule) {
-  if (!subdepartmentId || !wfhSchedule || typeof wfhSchedule !== 'object') return false;
-  const days = wfhSchedule[subdepartmentId];
+  const slug = resolveSubdepartmentSlug(subdepartmentId);
+  if (!slug || !wfhSchedule || typeof wfhSchedule !== 'object') return false;
+  const days = wfhSchedule[slug];
   return Array.isArray(days) && days.includes(dayName);
 }
 

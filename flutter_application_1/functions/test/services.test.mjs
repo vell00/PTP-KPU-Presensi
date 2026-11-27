@@ -4,6 +4,7 @@ import { createUserService, validateAssignment } from '../src/user_service.js';
 import { createPinService, hashPin, comparePinHash } from '../src/pin_service.js';
 import {
   createAttendanceService,
+  isWfhAllowed,
   toWitaParts,
   haversineMeters,
   computeWorkedMinutes,
@@ -151,6 +152,9 @@ test('attendance_service enforces WITA server time, holidays, geofence, WFH sche
   assert.equal(statusRes.earlyLeaveMinutes, 0);
   assert.equal(statusRes.status, 'Terlambat');
   assert.ok(haversineMeters(1.4748, 124.8421, 1.4748, 124.8421) < 1);
+  assert.equal(isWfhAllowed('Jumat', 'keuangan', { keuangan: ['Selasa', 'Jumat'] }), true);
+  assert.equal(isWfhAllowed('Jumat', 'Keuangan', { keuangan: ['Selasa', 'Jumat'] }), true);
+  assert.equal(isWfhAllowed('Kamis', 'Keuangan', { keuangan: ['Selasa', 'Jumat'] }), false);
 
   const db = createFakeDb({
     'users/nip_199001012020011001': {

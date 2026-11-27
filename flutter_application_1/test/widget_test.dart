@@ -3,77 +3,91 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/app/presensi_app.dart';
 import 'package:flutter_application_1/core/data/app_store.dart';
+import 'package:flutter_application_1/features/users/domain/organization.dart';
+import 'package:flutter_application_1/features/users/domain/user_profile.dart';
 
 void main() {
-  Future<void> launch(WidgetTester tester, Size size) async {
+  Future<AppStore> launch(WidgetTester tester, Size size) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final originalError = FlutterError.onError;
-    FlutterError.onError = (details) {
-      debugPrint(details.toString());
-      originalError?.call(details);
-    };
     SharedPreferences.setMockInitialValues({});
-    await tester.pumpWidget(
-      PresensiApp(
-        initialAdmin: true,
-        store: AppStore(await SharedPreferences.getInstance()),
-      ),
-    );
-    await tester.pumpAndSettle();
+    final store = AppStore(await SharedPreferences.getInstance())
+      ..currentUser = const UserProfile(
+        uid: 'nip_199001012020011001',
+        nip: '199001012020011001',
+        name: 'Andreas Manoppo',
+        role: JobRole.staff,
+        departmentId: 'keuangan_umum_logistik',
+        subdepartmentId: 'keuangan',
+        mustChangePassword: false,
+        hasPin: true,
+      );
+    await tester.pumpWidget(PresensiApp(store: store));
+    await tester.pump();
+    return store;
   }
 
-  testWidgets('Dashboard renders and navigation opens leave approvals', (
-    tester,
-  ) async {
-    await launch(tester, const Size(1440, 1100));
-    expect(find.text('Tren Kehadiran'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.tap(find.text('Izin & Cuti').first);
-    await tester.pumpAndSettle();
-    expect(find.text('Setujui pengajuan'), findsNWidgets(2));
-    await tester.tap(find.text('Setujui pengajuan').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Konfirmasi'));
-    await tester.pumpAndSettle();
-    expect(find.text('Disetujui'), findsOneWidget);
-    expect(find.text('Setujui pengajuan'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-  });
-  testWidgets('Dashboard fits a narrow Android viewport', (tester) async {
-    await launch(tester, const Size(390, 844));
-    expect(find.text('Tren Kehadiran'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.tap(find.byIcon(Icons.menu));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Ganti tampilan demo'));
-    await tester.pumpAndSettle();
-    Navigator.of(tester.element(find.byType(Drawer))).pop();
-    await tester.pumpAndSettle();
-    expect(find.text('Halo, Andreas 👋'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-  });
-  testWidgets('Feature pages retain working navigation after extraction', (
-    tester,
-  ) async {
-    await launch(tester, const Size(1440, 1100));
-    for (final entry in {
-      'Manajemen Pengguna': 'Tambah pengguna',
-      'Tunjangan Kinerja': 'Estimasi diterima',
-      'Pengaturan': 'Simpan pengaturan',
-    }.entries) {
-      await tester.tap(find.text(entry.key).first);
-      await tester.pumpAndSettle();
-      expect(find.text(entry.value), findsOneWidget);
+  testWidgets(
+    'Employee shell renders 4 bottom tabs and submits leave request on mobile',
+    (tester) async {
+      await launch(tester, const Size(390, 844));
+      expect(find.text('Halo, Andreas Manoppo'), findsOneWidget);
+      expect(find.text('Durasi Kerja Efektif'), findsOneWidget);
       expect(tester.takeException(), isNull);
-    }
-    await tester.ensureVisible(find.text('Buka tampilan pegawai'));
-    await tester.tap(find.text('Buka tampilan pegawai'));
-    await tester.pumpAndSettle();
-    expect(find.text('Halo, Andreas 👋'), findsOneWidget);
+
+      // Navigate to Riwayat tab
+      await tester.tap(find.text('Riwayat'));
+      await tester.pump();
+      expect(find.text('Riwayat Kehadiran'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      // Navigate to Izin & Cuti tab and submit a leave request
+      await tester.tap(find.text('Izin & Cuti'));
+      await tester.pump();
+      expect(find.text('Izin & Cuti Saya'), findsOneWidget);
+
+      await tester.tap(find.text('Ajukan'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ajukan Izin / Cuti'), findsOneWidget);
+
+      await tester.enterText(
+        find.byType(TextField).first,
+        'Mengurus administrasi keluarga di dinas kependudukan',
+      );
+      await tester.ensureVisible(find.text('Kirim Pengajuan'));
+      await tester.tap(find.text('Kirim Pengajuan'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Menunggu'), findsOneWidget);
+      expect(
+        find.text('Mengurus administrasi keluarga di dinas kependudukan'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      // Navigate to Profil tab
+      await tester.tap(find.text('Profil'));
+      await tester.pump();
+      expect(find.text('Penugasan Organisasi'), findsOneWidget);
+      expect(find.text('Jadwal WFH Subbagian Anda'), findsOneWidget);
+      expect(find.text('Ganti PIN Presensi'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets('Employee shell fits tablet viewport cleanly', (tester) async {
+    await launch(tester, const Size(768, 1024));
+    expect(find.text('Halo, Andreas Manoppo'), findsOneWidget);
+    expect(find.text('Presensi'), findsOneWidget);
+    expect(find.text('Riwayat'), findsOneWidget);
+    expect(find.text('Izin & Cuti'), findsOneWidget);
+    expect(find.text('Profil'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
     await tester.pumpWidget(const SizedBox());
   });
 }
