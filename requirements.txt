@@ -1,0 +1,59 @@
+================================================================================
+PERSYARATAN SISTEM & DEPENDENSI (SYSTEM REQUIREMENTS)
+PTP-KPU-Presensi — KPU Provinsi Sulawesi Utara
+================================================================================
+
+1. ENVIRONMENT & RUNTIME PREREQUISITES
+--------------------------------------------------------------------------------
+- Operating System      : Windows 10/11 (64-bit), macOS, atau Linux
+- Flutter SDK           : >= 3.38.0
+- Dart SDK              : >= 3.10.0 < 4.0.0
+- Node.js Runtime       : v18.x, v20.x, atau v22.x (v22.18.0 terverifikasi)
+- Package Manager (npm) : >= 10.x (v11.10.0 terverifikasi)
+- Android SDK           : Android 7.0 (API Level 24) ke atas
+- Android Studio / AVD  : Pixel 9 atau setara (untuk pengujian mobile emulator)
+- Web Browser           : Google Chrome versi terbaru
+
+2. MOBILE PEGAWAI DEPENDENCIES (flutter_application_1/pubspec.yaml)
+--------------------------------------------------------------------------------
+flutter (SDK)
+cupertino_icons             >= 1.0.8
+geolocator                  >= 14.0.3       # Sensor GPS, akurasi, dan mock location
+image_picker                >= 1.2.3        # Akses kamera depan untuk selfie presensi
+shared_preferences          >= 2.5.5        # Penyimpanan lokal offline/demo
+firebase_core               >= 4.15.0       # Integrasi Firebase Core
+firebase_auth               >= 6.7.0        # Otentikasi login NIP & ganti sandi
+cloud_firestore             >= 6.10.0       # Sinkronisasi cloud Firestore
+cloud_functions             >= 6.5.0        # Backend callable functions
+pdf                         >= 3.12.0       # Pembuatan dokumen PDF
+printing                    >= 5.14.3       # Cetak & ekspor dokumen
+
+3. WEB ADMIN DEPENDENCIES (admin-dashboard/package.json)
+--------------------------------------------------------------------------------
+next                        >= 15.1.4       # Framework React Web App Router
+react                       >= 19.0.0       # Core UI library
+react-dom                   >= 19.0.0
+lucide-react                >= 1.16.0       # Icon library
+clsx                        >= 2.1.1        # Class name helper
+tailwind-merge              >= 2.6.0        # Tailwind utility merger
+tailwindcss                 >= 3.4.17       # CSS styling framework
+typescript                  >= 5.7.3        # Type safety
+postcss                     >= 8.5.1
+autoprefixer                >= 10.4.20
+
+4. HARDWARE & PERMISSIONS (MOBILE)
+--------------------------------------------------------------------------------
+- Hardware Sensor           : GPS Hardware receiver aktif
+- Front Camera              : Minimum resolusi 720p
+- Device Permissions:
+    * android.permission.ACCESS_FINE_LOCATION
+    * android.permission.ACCESS_COARSE_LOCATION
+    * android.permission.CAMERA
+    * android.permission.INTERNET
+
+5. JARINGAN & BACKEND
+--------------------------------------------------------------------------------
+- Port Local Web Admin      : http://localhost:3000
+- Firebase Region Target    : asia-southeast2 (Jakarta)
+- Format Koordinat Kantor   : WGS84 (Decimal Degrees, Latitude: 1.4748, Longitude: 124.8421)
+- Zona Waktu Standar        : WITA (UTC+8)

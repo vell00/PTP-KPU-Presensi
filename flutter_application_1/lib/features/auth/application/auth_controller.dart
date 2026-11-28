@@ -9,13 +9,14 @@ import '../../users/domain/organization.dart';
 import '../../users/domain/user_profile.dart';
 import '../../../core/data/app_store.dart';
 import '../../../core/data/workspace_repository.dart';
-import '../../../core/firebase/firestore_workspace_repository.dart';
 
-/// Profile capabilities and mandatory password onboarding determine access.
+/// Employee authentication & mandatory onboarding controller.
+/// Accounts are provisioned strictly by Administrators via Cloud Functions.
 class AuthController extends ChangeNotifier {
   final SharedPreferences prefs;
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
+
   AuthController({
     required this.prefs,
     FirebaseAuth? auth,
@@ -31,6 +32,7 @@ class AuthController extends ChangeNotifier {
       }
     });
   }
+
   late final StreamSubscription<User?> _subscription;
   AppStore? store;
   UserProfile? profile;
@@ -38,6 +40,7 @@ class AuthController extends ChangeNotifier {
   bool busy = false;
   String? error;
   bool _disposed = false;
+
   void _notify() {
     if (!_disposed) notifyListeners();
   }
@@ -52,39 +55,62 @@ class AuthController extends ChangeNotifier {
     if (busy) return;
     busy = true;
     error = null;
+    notice = null;
     _notify();
     try {
-      if (!validNip(nip.trim())) {
-        throw const StorageException('NIP harus 18 digit.');
+      final cleanNip = nip.trim();
+      if (!validNip(cleanNip)) {
+        throw const StorageException('NIP harus terdiri dari tepat 18 digit angka.');
       }
-      final credential = await auth.signInWithEmailAndPassword(
-        email: nipEmail(nip),
-        password: password,
-      );
+
+      UserCredential credential;
+      try {
+        credential = await auth.signInWithEmailAndPassword(
+          email: nipEmail(cleanNip),
+          password: password,
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'invalid-credential' ||
+            e.code == 'user-not-found' ||
+            e.code == 'invalid-email') {
+          // Support legacy @kpu.go.id accounts during migration
+          credential = await auth.signInWithEmailAndPassword(
+            email: '$cleanNip@kpu.go.id',
+            password: password,
+          );
+        } else {
+          rethrow;
+        }
+      }
+
       final user = credential.user;
       if (user == null) {
         throw const StorageException('Login gagal. Silakan coba kembali.');
       }
-      final token = await user.getIdTokenResult(true);
+      await user.getIdTokenResult(true);
+
       final document = await firestore
           .collection('users')
           .doc(user.uid)
           .get(const GetOptions(source: Source.server));
       final data = document.data();
-      if (data == null ||
-          data['active'] != true ||
-          data['sessionVersion'] != token.claims?['sessionVersion']) {
+      if (data == null || data['active'] != true) {
         throw const StorageException(
-          'Profil akun belum aktif atau sesi tidak valid. Hubungi admin.',
+          'Akun belum aktif atau tidak ditemukan. Hubungi Administrator Sekretariat KPU Sulut.',
         );
       }
+      data['uid'] = user.uid;
       profile = UserProfile.fromJson(data);
       if (profile!.mustChangePassword) return;
-      final repository = profile!.isAdmin
-          ? FirestoreWorkspaceRepository(firestore: firestore, uid: user.uid)
-          : EmployeeWorkspaceRepository(firestore: firestore, uid: user.uid);
+
+      final repository = EmployeeWorkspaceRepository(
+        firestore: firestore,
+        uid: user.uid,
+        nip: profile!.nip,
+      );
       final loaded = await AppStore.connect(prefs, repository);
       loaded.currentUser = profile;
+
       if (_disposed) {
         loaded.dispose();
         return;
@@ -95,28 +121,53 @@ class AuthController extends ChangeNotifier {
       error = switch (e.code) {
         'invalid-credential' ||
         'wrong-password' ||
-        'user-not-found' => 'NIP atau password salah.',
-        'invalid-email' => 'NIP tidak valid.',
-        'user-disabled' => 'Akun dinonaktifkan. Hubungi pengelola.',
-        'too-many-requests' => 'Terlalu banyak percobaan. Coba lagi nanti.',
-        'network-request-failed' => 'Koneksi gagal. Periksa internet Anda.',
-        'operation-not-allowed' =>
-          'Login email/password belum diaktifkan oleh pengelola Firebase.',
-        _ => 'Login Firebase gagal (${e.code}).',
+        'user-not-found' => 'NIP atau kata sandi salah.',
+        'invalid-email' => 'Format NIP tidak valid.',
+        'user-disabled' => 'Akun dinonaktifkan. Hubungi Administrator Sekretariat.',
+        'too-many-requests' => 'Terlalu banyak percobaan gagal. Coba beberapa menit lagi.',
+        'network-request-failed' => 'Tidak ada koneksi internet. Periksa jaringan Anda.',
+        _ => 'Gagal masuk (${e.code}).',
       };
       try {
         await auth.signOut();
-      } catch (_) {
-        /* Keep the workspace closed. */
-      }
+      } catch (_) {}
     } catch (e) {
       profile = null;
-      error = e.toString();
+      error = e.toString().replaceFirst('Exception: ', '');
       try {
         await auth.signOut();
-      } catch (_) {
-        /* Keep the workspace closed. */
+      } catch (_) {}
+    } finally {
+      busy = false;
+      _notify();
+    }
+  }
+
+  /// Securely hashes and stores the employee's initial 6-digit PIN via Cloud Function
+  /// (zero plaintext PIN stored in Firestore, preserves original JobRole).
+  Future<void> createInitialPin(String pin) async {
+    if (busy || profile == null) return;
+    busy = true;
+    error = null;
+    _notify();
+    try {
+      final cleanPin = pin.trim();
+      if (!RegExp(r'^\d{6}$').hasMatch(cleanPin)) {
+        throw const StorageException('PIN harus terdiri dari tepat 6 digit angka.');
       }
+      await FirebaseFunctions.instanceFor(region: 'asia-southeast2')
+          .httpsCallable('setAttendancePin')
+          .call({'newPin': cleanPin});
+
+      profile = profile!.copyWith(hasPin: true);
+      if (store != null) {
+        store!.currentUser = profile;
+        await store!.refresh();
+      }
+    } on FirebaseFunctionsException catch (e) {
+      error = e.message ?? 'Gagal menyimpan PIN presensi.';
+    } catch (e) {
+      error = e.toString().replaceFirst('Exception: ', '');
     } finally {
       busy = false;
       _notify();
@@ -135,12 +186,11 @@ class AuthController extends ChangeNotifier {
       await auth.signOut();
       profile = null;
       notice =
-          'Password berhasil diganti. Masuk kembali menggunakan NIP dan password baru.';
+          'Kata sandi berhasil diperbarui. Silakan masuk kembali menggunakan NIP dan kata sandi baru Anda.';
     } on FirebaseFunctionsException catch (e) {
-      error = e.message ?? 'Perubahan password belum berhasil.';
+      error = e.message ?? 'Perubahan kata sandi belum berhasil.';
     } catch (_) {
-      error =
-          'Sesi berubah. Keluar lalu masuk kembali menggunakan password terbaru.';
+      error = 'Sesi berubah. Masuk kembali menggunakan kata sandi terbaru.';
     } finally {
       busy = false;
       _notify();

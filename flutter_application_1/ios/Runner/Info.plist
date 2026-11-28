@@ -6,6 +6,8 @@
 	<string>Lokasi digunakan untuk memverifikasi presensi di radius kantor.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Kamera digunakan untuk mengambil selfie presensi.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID digunakan untuk memverifikasi identitas pegawai saat mencatat presensi.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Akses foto untuk lampiran presensi.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

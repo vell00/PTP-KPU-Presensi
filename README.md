@@ -1,92 +1,99 @@
 # PTP-KPU-Presensi — KPU Sulawesi Utara
 
-Implementasi MVP Flutter untuk Android, iOS dan dashboard web admin. **Prototipe, belum siap sebagai sistem presensi resmi.** Mode default menyimpan data dengan SharedPreferences. Mode Firebase menyediakan login NIP, manajemen pengguna, pergantian password awal wajib dan Cloud Firestore; lihat [panduan Firebase](docs/firebase.md). Proyek Firebase asli belum dikonfigurasi. Akun pegawai memiliki profil jabatan dan unit serta data presensi prototipe terisolasi. Peran dapat diganti melalui tombol panah pada profil sidebar.
+Sistem Presensi KPU Sulawesi Utara terpisah menjadi dua aplikasi independen:
+1. **`flutter_application_1/`**: Aplikasi Mobile Flutter khusus **Pegawai** (Presensi WFO/WFH, verifikasi geolokasi/GPS, foto selfie, timer jam kerja, riwayat presensi).
+2. **`admin-dashboard/`**: Portal Web Next.js + TypeScript khusus **Administrator** (Dashboard ringkasan, rekapitulasi kehadiran dengan filter, direktori & manajemen NIP pegawai, persetujuan izin/cuti, dan pengaturan titik koordinat kantor).
 
-## Menjalankan
+---
+
+## 1. Menjalankan Aplikasi Mobile Pegawai (Flutter)
 
 ```sh
+cd flutter_application_1
 flutter pub get
-flutter run -d chrome
-flutter run # pilih perangkat Android/iOS
-flutter test
-flutter analyze
-flutter build web
+flutter run # Menjalankan pada perangkat fisik Android/iOS atau emulator (Pixel 9)
+flutter test # Menjalankan seluruh automated unit test suite
 ```
 
-Build iOS memerlukan macOS, Xcode, signing dan pengujian pada iPhone. Geolokasi dan kamera perlu diuji pada perangkat nyata. Versi SDK mengikuti pubspec.yaml; dependensi terkunci di pubspec.lock.
+## 2. Menjalankan Web Portal Admin (Next.js)
 
-## Fitur
+```sh
+cd admin-dashboard
+npm install
+npm run dev # Buka http://localhost:3000 di browser
+```
 
-- Dashboard responsif dengan grafik dan data contoh yang diberi label.
-- Filter nama, subdivisi, status dan bulan pada rekap.
-- Direktori pegawai lokal: tambah/edit, validasi NIP 18 digit dan duplikasi.
-- Pengajuan izin/cuti satu hari, persetujuan/penolakan dengan konfirmasi, status persisten.
-- Presensi masuk/keluar demo pada Android/iOS, selfie kamera depan, timer efektif, riwayat dan pencegahan duplikasi harian.
-- WITA (UTC+8): Senin–Kamis 08.00–16.00; Jumat 08.00–16.30. Akhir pekan diblokir. ISHOMA awal Senin–Kamis 12.00–13.00, Jumat 11.30–13.00. Jam ISHOMA adalah asumsi yang harus disetujui instansi.
-- Pengecualian lokasi WFH hanya Jumat untuk subdivisi Keuangan, Umum & Logistik, dapat dimatikan di Pengaturan. Subdivisi tersebut dipilih sebagai contoh, bukan kebijakan resmi.
-- WFO: izin lokasi, GPS aktif, timeout 20 detik, indikator `Position.isMocked`, akurasi maksimum 50 m, lokasi berumur maksimum satu menit, dan radius kantor dengan margin akurasi. Koordinat kantor sengaja belum diisi; admin harus memasukkan lokasi yang benar.
-- PDF bulanan hanya memuat presensi lokal bulan terpilih, **tidak mengikutkan data contoh**. PDF diberi label demo.
-- Simulasi tukin dengan input dasar, potongan kehadiran dan capaian prestasi; cetak PDF estimasi.
+---
 
-## Dasar tunjangan kinerja
+## 3. Evaluasi & Kekurangan Sistem yang Perlu Diperbaiki
 
-Rujukan penelusuran 23 September 2026:
+Berikut adalah catatan hasil audit sistem yang perlu diperbaiki oleh tim pengembang sebelum masuk ke tahap produksi:
 
-- JDIH KPU: Kepsekjen 326/2022 diubah melalui Kepsekjen 1090/2025.
-- Dokumen 1090/2025: https://jdih.kpu.go.id/kepsekjen/download/365
-- JDIH: https://jdih.kpu.go.id/kepsekjen/detail/EVTo0n8GsGd52yUwVACf0GQ1b0ZXY2hMVkpIdnYxdjRUTnFQOWc9PQ
+### A. Celah Keamanan & Anti-Fraud Presensi (Prioritas Tinggi)
+1. **Waktu Presensi Masih Menggunakan Jam Perangkat (Client Clock)**:
+   - *Masalah*: Di `employee_attendance_page.dart`, waktu jam masuk diambil dari `DateTime.now()` perangkat HP lokal.
+   - *Risiko*: Pegawai yang terlambat dapat memundurkan waktu di pengaturan HP mereka untuk memanipulasi status menjadi "Tepat Waktu".
+   - *Solusi*: Waktu presensi wajib diperoleh dari server tepercaya (NTP server atau `FieldValue.serverTimestamp()` di Firebase Firestore).
+2. **Bukti Foto Selfie Belum Disimpan**:
+   - *Masalah*: Kamera hanya membuka alur pengambilan gambar di HP, namun file foto selfie belum diunggah ke cloud storage (Firebase Storage).
+   - *Solusi*: Unggah dan tautkan URL foto selfie pada transaksi presensi harian sebagai bukti otentik, serta pertimbangkan integrasi face liveness detection.
+3. **Deteksi Fake GPS / Mock Location Masih Terbatas**:
+   - *Masalah*: Hanya mengandalkan properti `position.isMocked` bawaan plugin geolocator, yang dapat di-bypass pada perangkat yang di-*root* atau dimodifikasi.
+   - *Solusi*: Tambahkan verifikasi integritas perangkat (*Play Integrity API* untuk Android dan *DeviceCheck* untuk iOS).
 
-Dokumen memuat bobot kehadiran 40% dan prestasi kerja 60%. Simulator menghitung dua komponen itu dengan parameter input manual. Ini bukan mesin payroll resmi: tabel potongan, pengecualian cuti/sakit/dinas, penggantian keterlambatan, ambang potongan, status CPNS/PPPK dan tarif kelas jabatan belum dimodelkan. Acuan waktu dalam juknis berbeda dengan jadwal 08.00 yang diminta; karena itu aplikasi tidak mengubah keterlambatan menjadi potongan tukin secara otomatis. Tidak menggunakan aturan TPP Pemprov Sulut atau Bawaslu untuk menggantikan aturan KPU.
+### B. Arsitektur Database (Firestore Data Modeling)
+1. **Model Monolithic Document (Satu Dokumen untuk Seluruh Kantor)**:
+   - *Masalah*: Pada `FirestoreWorkspaceRepository`, seluruh catatan presensi, direktori pegawai, dan izin ditumpuk dalam satu dokumen (`workspaces/kpu-sulut`) dengan batas manual 700 KB.
+   - *Risiko*: Firestore membatasi kapasitas maksimal 1 MB per dokumen. Jika transaksi presensi bertambah setiap hari, dokumen ini akan melebihi kuota dan menyebabkan kegagalan sistem.
+   - *Solusi*: Pecah data menjadi koleksi transaksi independen:
+     - `attendances/{attendanceId}` (1 dokumen per transaksi masuk/pulang)
+     - `users/{userId}` (1 dokumen per profil pegawai)
+     - `leave_requests/{requestId}` (1 dokumen per permohonan izin)
 
-## Batas keamanan dan pekerjaan produksi
+### C. Logika Bisnis & Regulasi
+1. **Pengajuan Izin Masih Terbatas 1 Hari**:
+   - Perlu penambahan fitur izin/cuti dengan rentang tanggal (multi-day) dan opsi melampirkan berkas bukti (misal: surat sakit PDF/JPG).
+2. **Kalender Hari Libur Nasional Dinamis**:
+   - Saat ini validasi hari kerja hanya mengecek akhir pekan (`weekday > 5`). Perlu integrasi API atau daftar tanggal merah / cuti bersama resmi pemerintah.
 
-- Selfie hanya menguji alur kamera. Tidak ada pencocokan wajah, enrollment atau liveness; foto tidak dijadikan bukti tersimpan. Catatan hanya demo dan memerlukan konfirmasi eksplisit.
-- `isMocked` adalah sinyal dari OS/plugin, bukan jaminan mendeteksi semua spoofing. Aplikasi tidak dapat mematikan aplikasi lain. Presensi WFO diblokir saat sinyal mock aktif. Geolokasi sengaja tidak diminta pada WFH.
-- Web hanya untuk admin/pratinjau. Presensi web diblokir karena pemeriksaan perangkat setara mobile tidak tersedia.
-- Repository Firestore, Firebase Auth dan Security Rules sudah tersedia. Sebelum penggunaan nyata, lengkapi agregasi presensi/pengajuan antarpegawai, waktu server untuk presensi, kebijakan subdivisi, indeks unik pegawai/tanggal dan audit. SharedPreferences, jam perangkat, serta pergantian peran demo tidak memenuhi persyaratan keamanan produksi.
-- Integrasikan verifikasi wajah/liveness dan device attestation (Play Integrity/App Attest) pada server. Uji izin ditolak, mock location, GPS buruk, batas radius, restart dan WFH pada Android/iPhone nyata.
-- Direktori pegawai lokal belum mengubah identitas pegawai demo. Ringkasan/grafik memakai data contoh, bukan metrik instansi.
-- Kalender hari libur nasional, cuti multi-hari/lampiran, approval berjenjang, payroll per pegawai dan integrasi backend masih perlu dibangun.
+---
 
-## Struktur modular
+## 4. Rekomendasi Restrukturisasi Folder (Mobile Pegawai vs Web Admin)
 
+Agar proses *debugging* cepat dan developer tidak bingung ketika terjadi bug, struktur kode dipisahkan secara tegas:
+
+### A. Struktur Mobile Pegawai (`flutter_application_1/lib/`)
+Fokus hanya pada pengalaman pegawai, hapus halaman admin yang tidak diperlukan dari mobile:
 ```text
 lib/
-  main.dart                     # Bootstrap saja (3 baris)
-  app/                          # MaterialApp, shell dan navigasi
-    widgets/                    # Sidebar dan topbar
-  core/
-    config/                     # Konstanta aplikasi
-    data/                       # AppStore dan kontrak repository, ChangeNotifier
-    firebase/                   # Bootstrap dan repository Firestore
-    theme/                      # Warna dan ThemeData
-    ui/                         # Komponen bersama, pemilih bulan
-    utils/                      # Format tanggal WITA dan rupiah
-  features/
-    auth/                       # Controller sesi, login, ilustrasi
-    dashboard/                  # Ringkasan, grafik dan painter
-    attendance/                 # Model, aturan kerja, GPS/kamera, rekap, timer
-    users/                  # Direktori dan editor pegawai
-    leave/                      # Model izin, pengajuan dan persetujuan
-    allowance/                  # Rumus dan halaman simulator tukin
-    settings/                   # Pengaturan jadwal dan formulir lokasi
-    reports/                    # Ekspor PDF tanpa ketergantungan BuildContext
+├── main.dart
+├── app/
+│   ├── app.dart                    # Inisialisasi MaterialApp & Theme
+│   └── routes.dart                 # Rute halaman mobile pegawai
+├── core/
+│   ├── services/
+│   │   ├── location_service.dart   # GPS & verifikasi radius kantor
+│   │   └── camera_service.dart     # Pengambilan foto selfie
+│   ├── constants/                  # Jam kerja WITA, aturan ISHOMA
+│   └── utils/                      # Formatter tanggal & mata uang
+└── features/
+    ├── auth/                       # Login NIP pegawai & ganti password
+    ├── attendance/                 # Presensi WFO, WFH, indikator radius, timer
+    ├── history/                    # Riwayat presensi bulanan pegawai bersangkutan
+    └── leave/                      # Formulir pengajuan izin / cuti mandiri
 ```
 
-Halaman menyimpan state formulir/filter masing-masing. `AppStore` memberi notifikasi hanya saat data berubah; shell tidak menjalankan timer. Timer satu detik hanya aktif di `WorkDuration` selama presensi berjalan. Layanan perangkat dan PDF terpisah dari widget agar bisa diganti/dikembangkan tanpa mengubah bootstrap. Filter tabel dihitung sekali per build. Tidak ada dependensi state-management baru.
-
-### Status referensi Figma
-
-Referensi: https://www.figma.com/make/52X3AnmuOWd4mLoPLHCMtY/Sistem-Presensi-KPU-Sulut
-
-Thumbnail publik berhasil dibaca. Halaman login mode Firebase disesuaikan dengan elemen yang terlihat: latar navy, kartu putih membulat, tombol merah, ilustrasi kantor. Ilustrasi dibuat dengan CustomPainter dan ikon pemilu generik, bukan logo resmi KPU. Detail frame/kode Figma dan halaman lainnya belum tersedia melalui koneksi desain; kesetaraan seluruh frontend belum terverifikasi. Login dapat dibuka dengan konfigurasi USE_FIREBASE=true, sedangkan mode demo tetap langsung ke dashboard.
-
-## Firebase
-
-Penyimpanan cloud menggunakan **Cloud Firestore**, login menggunakan **Firebase Authentication**. Integrasi dapat dicoba dengan emulator lokal sebelum membuat proyek Firebase. Panduan lengkap ada di [docs/firebase.md](docs/firebase.md).
-
-```sh
-flutter run --dart-define=USE_FIREBASE=true --dart-define=FIREBASE_EMULATORS=true
+### B. Struktur Web Admin (`admin-dashboard/src/`)
+Fokus pada rekapitulasi, persetujuan, dan manajemen instansi:
+```text
+src/
+├── app/
+│   ├── page.tsx                    # Ringkasan dashboard & metrik kehadiran
+│   ├── rekap/page.tsx              # Rekapitulasi presensi & filter
+│   ├── pegawai/page.tsx            # Direktori & CRUD pegawai KPU
+│   ├── izin/page.tsx               # Persetujuan (approval) izin & cuti
+│   └── pengaturan/page.tsx         # Titik Geolocation kantor KPU & WFH Jumat
+├── components/                     # Sidebar, Topbar, Modals
+├── lib/                            # Store state lokal & integrasi API/Firebase
+└── types/                          # Definisi tipe TypeScript
 ```
-
-Jalankan emulator dan seed admin terlebih dahulu sesuai panduan. Backend MongoDB sebelumnya diarsipkan di `legacy/mongodb/` dan tidak lagi dipanggil aplikasi. Konfigurasi `API_BASE_URL` lama sudah tidak digunakan.

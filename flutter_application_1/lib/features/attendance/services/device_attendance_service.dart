@@ -1,58 +1,147 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../../core/data/app_store.dart';
 
+class GeolocationVerificationResult {
+  final bool verified;
+  final double distance;
+  final double radius;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracyMeters;
+  final bool isMocked;
+  final String? errorMessage;
+
+  const GeolocationVerificationResult({
+    required this.verified,
+    required this.distance,
+    required this.radius,
+    this.latitude,
+    this.longitude,
+    this.accuracyMeters,
+    this.isMocked = false,
+    this.errorMessage,
+  });
+}
+
 class DeviceAttendanceService {
-  Future<bool> captureSelfie(AppStore store, {required bool wfh}) async {
-    if (!wfh) {
-      if (store.latitude == null || store.longitude == null) {
-        throw Exception('Lokasi kantor belum dikonfigurasi oleh admin.');
-      }
+  static const double maxAcceptableAccuracyMeters = 150.0;
+
+  Future<GeolocationVerificationResult> verifyLocation(
+    AppStore store, {
+    required bool wfh,
+  }) async {
+    final targetRadius = store.radius > 0 ? store.radius : 100.0;
+    if (wfh) {
+      return GeolocationVerificationResult(
+        verified: true,
+        distance: 0,
+        radius: targetRadius,
+      );
+    }
+
+    if (store.latitude == null || store.longitude == null) {
+      return GeolocationVerificationResult(
+        verified: false,
+        distance: 0,
+        radius: targetRadius,
+        errorMessage:
+            'Titik koordinat geofencing kantor belum diatur oleh administrator.',
+      );
+    }
+
+    try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-        throw Exception('Aktifkan layanan lokasi perangkat.');
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: 0,
+          radius: targetRadius,
+          errorMessage:
+              'Layanan lokasi (GPS) pada perangkat belum aktif. Aktifkan GPS lalu coba lagi.',
+        );
       }
+
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        throw Exception('Izin lokasi diperlukan untuk presensi WFO.');
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: 0,
+          radius: targetRadius,
+          errorMessage:
+              'Izin akses lokasi ditolak. Izinkan lokasi di pengaturan perangkat untuk presensi WFO.',
+        );
       }
-      final p = await Geolocator.getCurrentPosition(
+
+      final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 20),
+          timeLimit: Duration(seconds: 15),
         ),
       );
-      if (p.isMocked) {
-        throw Exception('Lokasi tiruan terdeteksi. Presensi diblokir.');
+
+      if (position.isMocked) {
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: 0,
+          radius: targetRadius,
+          isMocked: true,
+          errorMessage:
+              'Lokasi tiruan (Fake GPS) terdeteksi. Matikan aplikasi lokasi palsu untuk melanjutkan.',
+        );
       }
-      if (p.accuracy > 50 || p.accuracy <= 0) {
-        throw Exception('Akurasi GPS belum memadai. Coba di area terbuka.');
+
+      if (position.accuracy > maxAcceptableAccuracyMeters) {
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: 0,
+          radius: targetRadius,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          accuracyMeters: position.accuracy,
+          errorMessage:
+              'Sinyal GPS kurang akurat (±${position.accuracy.round()} m). Pindah ke area terbuka lalu coba lagi.',
+        );
       }
-      if (DateTime.now().toUtc().difference(p.timestamp.toUtc()).abs() >
-          const Duration(minutes: 1)) {
-        throw Exception('Lokasi kedaluwarsa. Silakan ulangi.');
-      }
+
       final distance = Geolocator.distanceBetween(
-        p.latitude,
-        p.longitude,
+        position.latitude,
+        position.longitude,
         store.latitude!,
         store.longitude!,
       );
-      if (distance + p.accuracy > store.radius) {
-        throw Exception(
-          'Anda di luar radius kantor atau terlalu dekat batas radius (${distance.round()} m).',
+
+      if (distance > targetRadius) {
+        return GeolocationVerificationResult(
+          verified: false,
+          distance: distance,
+          radius: targetRadius,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          accuracyMeters: position.accuracy,
+          errorMessage:
+              'Anda berada di luar radius kantor (${distance.round()} m dari kantor, batas ${targetRadius.round()} m).',
         );
       }
+
+      return GeolocationVerificationResult(
+        verified: true,
+        distance: distance,
+        radius: targetRadius,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        accuracyMeters: position.accuracy,
+      );
+    } catch (e) {
+      return GeolocationVerificationResult(
+        verified: false,
+        distance: 0,
+        radius: targetRadius,
+        errorMessage:
+            'Gagal memperoleh titik GPS: ${e.toString().replaceFirst('Exception: ', '')}.',
+      );
     }
-    final selfie = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      maxWidth: 720,
-      imageQuality: 75,
-    );
-    return selfie != null;
   }
 }
